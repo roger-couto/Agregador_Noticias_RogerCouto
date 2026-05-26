@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --text-primary: #ffffff;
+  --text-muted:   rgba(255,255,255,0.6);
+  --text-dim:     rgba(255,255,255,0.3);
+  --border-color: rgba(255,255,255,0.1);
+  --gold: #D4AF37;
+  --bg-sidebar: rgba(0,0,0,0.15);
+  --bg-card:    rgba(255,255,255,0.08);
+  --bg-input:   rgba(255,255,255,0.08);
+}
+
+/* ======= OCEANO - azul elétrico vibrante ======= */
+body, body.tema-oceano {
+  --accent:     #60a5fa;
+  --accent-rgb: 96,165,250;
+  background:
+          radial-gradient(ellipse at 15% 40%, rgba(37,99,235,0.9) 0%, transparent 55%),
+          radial-gradient(ellipse at 85% 15%, rgba(147,197,253,0.35) 0%, transparent 45%),
+          radial-gradient(ellipse at 70% 85%, rgba(29,78,216,0.7) 0%, transparent 50%),
+          linear-gradient(150deg, #1e3a8a 0%, #2563eb 30%, #1d4ed8 60%, #1e3a8a 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* ======= ESMERALDA ======= */
+body.tema-esmeralda {
+  --accent:     #34d399;
+  --accent-rgb: 52,211,153;
+  background:
+          radial-gradient(ellipse at 15% 40%, rgba(5,150,105,0.9) 0%, transparent 55%),
+          radial-gradient(ellipse at 85% 15%, rgba(110,231,183,0.35) 0%, transparent 45%),
+          radial-gradient(ellipse at 70% 85%, rgba(4,120,87,0.7) 0%, transparent 50%),
+          linear-gradient(150deg, #064e3b 0%, #059669 30%, #047857 60%, #064e3b 100%);
+  background-attachment: fixed;
+}
+
+/* ======= AMANDITA ======= */
+body.tema-amandita {
+  --accent:     #c8864a;
+  --accent-rgb: 200,134,74;
+  background:
+          radial-gradient(ellipse at 15% 40%, rgba(222,185,140,0.5) 0%, transparent 55%),
+          radial-gradient(ellipse at 85% 15%, rgba(245,230,200,0.6) 0%, transparent 45%),
+          radial-gradient(ellipse at 70% 85%, rgba(210,175,130,0.4) 0%, transparent 50%),
+          linear-gradient(150deg, #f9f0e0 0%, #f2e4c8 30%, #eedcb8 60%, #f5ecd8 100%);
+  background-attachment: fixed;
+  --text-primary: #4a2e10;
+  --text-muted:   rgba(74,46,16,0.6);
+  --text-dim:     rgba(74,46,16,0.3);
+  --bg-sidebar: rgba(200,150,90,0.08);
+  --bg-card:    rgba(255,255,255,0.55);
+  --bg-input:   rgba(255,255,255,0.4);
+  --border-color: rgba(200,134,74,0.12);
+  --gold: #c8864a;
+}
+
+/* ======= AMETISTA ======= */
+body.tema-ametista {
+  --accent:     #c084fc;
+  --accent-rgb: 192,132,252;
+  background:
+          radial-gradient(ellipse at 15% 40%, rgba(126,34,206,0.9) 0%, transparent 55%),
+          radial-gradient(ellipse at 85% 15%, rgba(216,180,254,0.35) 0%, transparent 45%),
+          radial-gradient(ellipse at 70% 85%, rgba(109,40,217,0.7) 0%, transparent 50%),
+          linear-gradient(150deg, #3b0764 0%, #7e22ce 30%, #6d28d9 60%, #3b0764 100%);
+  background-attachment: fixed;
+}
+
+/* ======= SOLAR ======= */
+body.tema-solar {
+  --accent:     #fbbf24;
+  --accent-rgb: 251,191,36;
+  background:
+          radial-gradient(ellipse at 15% 40%, rgba(217,119,6,0.9) 0%, transparent 55%),
+          radial-gradient(ellipse at 85% 15%, rgba(252,211,77,0.35) 0%, transparent 45%),
+          radial-gradient(ellipse at 70% 85%, rgba(180,83,9,0.7) 0%, transparent 50%),
+          linear-gradient(150deg, #78350f 0%, #d97706 30%, #b45309 60%, #78350f 100%);
+  background-attachment: fixed;
+}
+
+/* ======= ECLIPSE ======= */
+body.tema-eclipse {
+  --accent:     #9ca3af;
+  --accent-rgb: 156,163,175;
+  background:
+          radial-gradient(ellipse at 15% 40%, rgba(55,65,81,0.9) 0%, transparent 55%),
+          radial-gradient(ellipse at 85% 15%, rgba(156,163,175,0.2) 0%, transparent 45%),
+          radial-gradient(ellipse at 70% 85%, rgba(31,41,55,0.7) 0%, transparent 50%),
+          linear-gradient(150deg, #111827 0%, #1f2937 30%, #374151 60%, #111827 100%);
+  background-attachment: fixed;
+}
+
+/* ======= VOLCANIC - vermelho intenso ======= */
+body.tema-volcanic {
+  --accent:     #f87171;
+  --accent-rgb: 248,113,113;
+  background:
+          radial-gradient(ellipse at 15% 40%, rgba(185,28,28,0.9) 0%, transparent 55%),
+          radial-gradient(ellipse at 85% 15%, rgba(252,165,165,0.3) 0%, transparent 45%),
+          radial-gradient(ellipse at 70% 85%, rgba(153,27,27,0.7) 0%, transparent 50%),
+          linear-gradient(150deg, #7f1d1d 0%, #dc2626 30%, #b91c1c 60%, #7f1d1d 100%);
+  background-attachment: fixed;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+input  { font-family: inherit; }
+img    { display: block; max-width: 100%; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 10px; }

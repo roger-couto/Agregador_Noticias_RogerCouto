@@ -1,0 +1,43 @@
+<article class="news-card" (click)="abrirLink()">
+
+    <div class="card-imagem" *ngIf="noticia.imageUrl && noticia.imageUrl !== 'null'">
+        <img [src]="noticia.imageUrl" [alt]="noticia.titulo" loading="lazy"
+             (error)="onImgError($event)">
+    </div>
+
+    <div class="card-corpo">
+        <div class="card-meta">
+            <span class="portal-badge">{{ noticia.portal ? noticia.portal.toUpperCase() : '' }}</span>
+            <span class="tempo">{{ formatarTempo(noticia.publicadoEm) }}</span>
+        </div>
+
+        <h2 class="card-titulo">{{ noticia.titulo }}</h2>
+
+        <p class="card-descricao" *ngIf="noticia.descricao">
+            {{ noticia.descricao | slice:0:200 }}{{ (noticia.descricao && noticia.descricao.length > 200) ? '...' : '' }}
+        </p>
+
+        <div class="card-acoes" (click)="$event.stopPropagation()">
+            <button class="btn-acao gostei"
+                    [class.ativo]="noticia.likedByUser"
+                    (click)="curtir()">
+                <span class="icone">{{ noticia.likedByUser ? '♥' : '♡' }}</span>
+                <span>Gostei</span>
+            </button>
+
+            <button class="btn-acao salvar"
+                    [class.ativo]="noticia.savedByUser"
+                    (click)="salvar()">
+                <span class="icone">{{ noticia.savedByUser ? '◆' : '◇' }}</span>
+                <span>{{ noticia.savedByUser ? 'Salvo' : 'Ler mais tarde' }}</span>
+            </button>
+
+            <a class="btn-link" [href]="noticia.url" target="_blank" rel="noopener"
+               *ngIf="noticia.url && noticia.url !== '#'"
+               (click)="$event.stopPropagation()">
+                Ver matéria →
+            </a>
+        </div>
+    </div>
+
+</article>

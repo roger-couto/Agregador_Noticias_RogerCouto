@@ -1,0 +1,41 @@
+<div class="login-page">
+    <div class="login-card">
+
+        <div class="login-logo">
+            <span class="logo-texto">ÁGORA</span>
+        </div>
+        <p class="login-subtitulo">Agregador de Notícias</p>
+
+        <div class="login-tabs">
+            <button [class.ativo]="modo === 'login'" (click)="modo = 'login'; erro = ''">Entrar</button>
+            <button [class.ativo]="modo === 'cadastro'" (click)="modo = 'cadastro'; erro = ''">Cadastrar</button>
+        </div>
+
+        <div class="login-form">
+            <div *ngIf="modo === 'cadastro'" class="campo">
+                <label>Nome</label>
+                <input type="text" [(ngModel)]="nome" placeholder="Seu nome">
+            </div>
+
+            <div class="campo">
+                <label>E-mail</label>
+                <input type="email" [(ngModel)]="email" placeholder="Ex: Usuario@email.com"
+                       (keyup.enter)="modo === 'login' ? entrar() : cadastrar()">
+            </div>
+
+            <div class="campo">
+                <label>Senha</label>
+                <input type="password" [(ngModel)]="senha" placeholder="••••••••"
+                       (keyup.enter)="modo === 'login' ? entrar() : cadastrar()">
+            </div>
+
+            <p class="erro-msg" *ngIf="erro">{{ erro }}</p>
+
+            <button class="btn-principal" (click)="modo === 'login' ? entrar() : cadastrar()" [disabled]="carregando">
+                <span *ngIf="!carregando">{{ modo === 'login' ? 'Entrar' : 'Criar conta' }}</span>
+                <span *ngIf="carregando" class="spinner"></span>
+            </button>
+        </div>
+
+    </div>
+</div>

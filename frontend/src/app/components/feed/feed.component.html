@@ -1,0 +1,107 @@
+<div class="agora-layout">
+
+    <!-- ===== SIDEBAR ESQUERDA ===== -->
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img src="assets/logo-agora.png" alt="Ágora" class="logo-img">
+        </div>
+
+        <nav class="sidebar-nav">
+            <a class="nav-item" [class.ativo]="filtroAtivo === 'recentes'" (click)="carregarRecentes()">RECENTES</a>
+            <a class="nav-item" [class.ativo]="filtroAtivo === 'curtidos'" (click)="verCurtidos()">CURTIDOS</a>
+            <a class="nav-item" [class.ativo]="filtroAtivo === 'ler-mais-tarde'" (click)="verLerMaisTarde()">LER MAIS TARDE</a>
+        </nav>
+
+        <div class="sidebar-secao">
+            <span class="secao-label">PORTAIS</span>
+            <ul class="portal-lista">
+                <li *ngFor="let portal of portais"
+                    class="portal-item"
+                    [class.ativo]="filtroAtivo === portal"
+                    (click)="selecionarPortal(portal)">
+                    <span class="portal-dot"></span>
+                    {{ portal }}
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom">
+            <button class="btn-temas" (click)="mostrarTemas = !mostrarTemas">
+                <span class="temas-icon">🎨</span>
+                <span>TEMAS</span>
+            </button>
+            <div class="temas-menu" *ngIf="mostrarTemas">
+                <div class="tema-opcao" *ngFor="let tema of temas" (click)="definirTema(tema)">
+                    <span class="tema-bolinha" [style.background]="tema.cor"></span>
+                    <span class="tema-nome" [style.color]="tema.cor">{{ tema.nome.toUpperCase() }}</span>
+                    <span class="tema-check" *ngIf="temaAtual.classe === tema.classe">✓</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===== CONTEÚDO PRINCIPAL ===== -->
+    <main class="conteudo-principal">
+        <header class="topbar">
+            <div class="busca-container">
+                <input class="busca-input" type="text" [(ngModel)]="termoBusca"
+                       placeholder="Pesquisar Notícia sobre...">
+                <span class="busca-icone">🔍</span>
+            </div>
+        </header>
+
+        <section class="feed-area">
+            <div *ngIf="erro" class="aviso-erro">⚠️ {{ erro }}</div>
+            <div *ngIf="carregando" class="carregando">
+                <div class="loader-ring"></div>
+                <span>Buscando notícias...</span>
+            </div>
+            <div *ngIf="!carregando && noticiasFiltradas.length === 0 && !erro" class="vazio">
+                Nenhuma notícia encontrada.
+            </div>
+            <div class="cards-lista" *ngIf="!carregando">
+                <app-news-card
+                        *ngFor="let noticia of noticiasFiltradas; let i = index"
+                        [noticia]="noticia"
+                        [style.animation-delay]="(i * 0.06) + 's'"
+                        (onGostei)="onGostei($event)"
+                        (onSalvar)="onSalvar($event)">
+                </app-news-card>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===== SIDEBAR DIREITA ===== -->
+    <aside class="topicos-sidebar">
+
+        <!-- Bloco usuário no topo direito — clicável com dropdown -->
+        <div class="usuario-bloco" (click)="toggleDropdown($event)">
+            <div class="usuario-info">
+                <span class="usuario-nome">{{ usuario?.nome || 'Usuário' }}</span>
+                <span class="usuario-email">{{ usuario?.email || '' }}</span>
+            </div>
+            <div class="usuario-avatar">{{ inicialUsuario }}</div>
+
+            <!-- Dropdown -->
+            <div class="usuario-dropdown" *ngIf="mostrarDropdown" (click)="$event.stopPropagation()">
+                <button class="dropdown-item" (click)="irParaPrivacidade()">Privacidade</button>
+                <button class="dropdown-item" (click)="irParaConfiguracoes()">Configurações</button>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item logout" (click)="sair()">Fazer Logout</button>
+            </div>
+        </div>
+
+        <span class="topicos-titulo">TÓPICOS</span>
+        <div class="topicos-grid">
+            <button
+                    *ngFor="let tag of tags"
+                    class="tag-btn"
+                    [class.ativo]="filtroAtivo === tag.replace('#', '')"
+                    (click)="selecionarTag(tag)">
+                {{ tag }}
+            </button>
+        </div>
+    </aside>
+
+</div>
