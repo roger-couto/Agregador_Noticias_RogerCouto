@@ -31,7 +31,10 @@ export class FeedComponent implements OnInit {
 
   private mapaInteracoes = new Map<number, { curtido: boolean; salvo: boolean }>();
 
-  portais = ['BBC NEWS', 'CNN', 'NEW YORK TIMES', 'G1'];
+  // Portais divididos em dois blocos organizados em ordem alfabética
+  portaisBr = ['ESTADÃO', 'EXAME', 'GLOBO / G1', 'IGN BRASIL', 'METRÓPOLES', 'UOL'];
+  portaisGringos = ['BBC NEWS', 'BLOOMBERG', 'CNN', 'REUTERS', 'TECHCRUNCH', 'THE NEW YORK TIMES'];
+
   tags = ['#TECNOLOGIA', '#LAZER', '#ECONOMIA', '#ESPORTE', '#POLÍTICA', '#SAÚDE', '#CIÊNCIA', '#CULTURA'];
 
   constructor(
@@ -129,9 +132,22 @@ export class FeedComponent implements OnInit {
     this.carregando = true;
     const mapaExistentes = new Map<number, Noticia>();
     this.todasNoticias.forEach(n => { if (n.id != null) mapaExistentes.set(n.id, n); });
+
     return {
       next: (data: Noticia[]) => {
-        this.noticias = this.aplicarInteracoesNaLista(data.map(n => mapaExistentes.get(n.id!) ?? n));
+        // 1. Converte e aplica o estado de curtido/salvo nas novas notícias vindo da API
+        const novasNoticiasTratadas = this.aplicarInteracoesNaLista(data.map(n => mapaExistentes.get(n.id!) ?? n));
+
+        // 2. Alimenta a lista que está aparecendo na tela agora
+        this.noticias = novasNoticiasTratadas;
+
+        // 3. Alimenta o repositório global para que as abas "Curtidos" e "Ler mais tarde" encontrem elas
+        novasNoticiasTratadas.forEach(nova => {
+          if (nova.id && !this.todasNoticias.some(t => t.id === nova.id)) {
+            this.todasNoticias.push(nova);
+          }
+        });
+
         this.carregando = false;
       },
       error: () => { this.noticias = []; this.carregando = false; }

@@ -14,9 +14,20 @@
         </nav>
 
         <div class="sidebar-secao">
-            <span class="secao-label">PORTAIS</span>
+            <span class="secao-label">PORTAIS NACIONAIS</span>
             <ul class="portal-lista">
-                <li *ngFor="let portal of portais"
+                <li *ngFor="let portal of portaisBr"
+                    class="portal-item"
+                    [class.ativo]="filtroAtivo === portal"
+                    (click)="selecionarPortal(portal)">
+                    <span class="portal-dot"></span>
+                    {{ portal }}
+                </li>
+            </ul>
+
+            <span class="secao-label secao-gringos">PORTAIS INTERNACIONAIS</span>
+            <ul class="portal-lista">
+                <li *ngFor="let portal of portaisGringos"
                     class="portal-item"
                     [class.ativo]="filtroAtivo === portal"
                     (click)="selecionarPortal(portal)">

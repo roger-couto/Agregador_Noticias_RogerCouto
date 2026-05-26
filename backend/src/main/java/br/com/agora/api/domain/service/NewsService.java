@@ -24,13 +24,14 @@ public class NewsService {
     @Value("${newsapi.base-url}")
     private String baseUrl;
 
-    @Autowired
-    private NewsRepository newsRepository;
-
+    private final NewsRepository newsRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    // Cache compartilhado — 30 minutos para todos os usuários
+    @Autowired
+    public NewsService(NewsRepository newsRepository) {
+        this.newsRepository = newsRepository;
+    }
     private static List<NoticiaDTO> cacheRecentes = null;
     private static long cacheRecentesTimestamp = 0;
     private static final long CACHE_TTL_MS = 30 * 60 * 1000;
@@ -49,27 +50,54 @@ public class NewsService {
         };
     }
 
-    private String resolverPortal(String portal) {
-        return switch (portal.toLowerCase()) {
-            case "bbc news"       -> "bbc.co.uk";
-            case "cnn"            -> "cnn.com";
-            case "new york times" -> "nytimes.com";
-            case "g1"             -> "g1.globo.com";
-            default               -> portal;
-        };
-    }
-
     public List<NoticiaDTO> buscarPorTag(String tag) {
         String query = resolverQuery(tag);
         String url = baseUrl + "/everything?q=" + encode(query)
-                + "&language=pt&sortBy=publishedAt&pageSize=20&apiKey=" + apiKey;
+                + "&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
         return fetchEConverter(url, tag, null);
     }
 
     public List<NoticiaDTO> buscarPorPortal(String portal) {
-        String dominio = resolverPortal(portal);
-        String url = baseUrl + "/everything?domains=" + dominio
-                + "&language=pt&sortBy=publishedAt&pageSize=20&apiKey=" + apiKey;
+        String url;
+        // Corrige o aviso removendo a substituição redundante de espaços
+        String portalChave = portal.trim().toLowerCase().replace("/", "-");
+        portalChave = java.text.Normalizer.normalize(portalChave, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replaceAll("\\s+", " ");
+
+        switch (portalChave) {
+            // NACIONAIS
+            case "globo - g1", "globo-g1", "globo g1", "g1", "globo" ->
+                    url = baseUrl + "/everything?q=g1 OR globo&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+            case "metropoles" ->
+                    url = baseUrl + "/everything?domains=metropoles.com&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+            case "uol" ->
+                    url = baseUrl + "/everything?domains=uol.com.br&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+            case "estadao" ->
+                    url = baseUrl + "/everything?q=estadao&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+            case "exame" ->
+                    url = baseUrl + "/everything?domains=exame.com&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+            case "ign brasil" ->
+                    url = baseUrl + "/everything?domains=ign.com&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+
+            // INTERNACIONAIS
+            case "bbc news" ->
+                    url = baseUrl + "/everything?sources=bbc-news&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+            case "bloomberg" ->
+                    url = baseUrl + "/everything?sources=bloomberg&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+            case "cnn" ->
+                    url = baseUrl + "/everything?sources=cnn&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+            case "reuters" ->
+                    url = baseUrl + "/everything?q=reuters&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+            case "techcrunch" ->
+                    url = baseUrl + "/everything?sources=techcrunch&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+            case "the new york times" ->
+                    url = baseUrl + "/everything?q=\"new york times\"&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+
+            default ->
+                    url = baseUrl + "/everything?q=" + encode(portal) + "&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+        }
+
         return fetchEConverter(url, null, portal);
     }
 
@@ -80,12 +108,12 @@ public class NewsService {
                     + ((CACHE_TTL_MS - (agora - cacheRecentesTimestamp)) / 60000) + " min");
             return cacheRecentes;
         }
-        String url = baseUrl + "/everything?q=brasil&language=pt&sortBy=publishedAt&pageSize=20&apiKey=" + apiKey;
+        String url = baseUrl + "/everything?q=brasil&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
         List<NoticiaDTO> resultado = fetchEConverter(url, null, null);
         if (!resultado.isEmpty()) {
             cacheRecentes = resultado;
             cacheRecentesTimestamp = agora;
-            System.out.println("[NewsService] Cache de recentes atualizado");
+            System.out.println("[NewsService] Cache de recentes updated");
         }
         return (resultado.isEmpty() && cacheRecentes != null) ? cacheRecentes : resultado;
     }

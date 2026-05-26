@@ -76,6 +76,11 @@
   font-weight: 700;
 }
 
+/* Margem de distanciamento para o segundo bloco de portais */
+.secao-gringos {
+  margin-top: 2.25rem;
+}
+
 .portal-lista { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
 
 .portal-item {
