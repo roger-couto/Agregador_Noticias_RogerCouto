@@ -127,7 +127,6 @@ export class FeedComponent implements OnInit {
     this.filtroAtivo = portal;
     this.newsService.getPorPortal(portal).subscribe(this.handlerFiltro());
   }
-
   private handlerFiltro() {
     this.carregando = true;
     const mapaExistentes = new Map<number, Noticia>();
@@ -135,19 +134,20 @@ export class FeedComponent implements OnInit {
 
     return {
       next: (data: Noticia[]) => {
-        // 1. Converte e aplica o estado de curtido/salvo nas novas notícias vindo da API
         const novasNoticiasTratadas = this.aplicarInteracoesNaLista(data.map(n => mapaExistentes.get(n.id!) ?? n));
-
-        // 2. Alimenta a lista que está aparecendo na tela agora
         this.noticias = novasNoticiasTratadas;
 
-        // 3. Alimenta o repositório global para que as abas "Curtidos" e "Ler mais tarde" encontrem elas
+        // Atualiza ou insere no repositório global sem gerar duplicatas
         novasNoticiasTratadas.forEach(nova => {
-          if (nova.id && !this.todasNoticias.some(t => t.id === nova.id)) {
-            this.todasNoticias.push(nova);
+          if (nova.id) {
+            const index = this.todasNoticias.findIndex(t => t.id === nova.id);
+            if (index !== -1) {
+              this.todasNoticias[index] = nova;
+            } else {
+              this.todasNoticias.push(nova);
+            }
           }
         });
-
         this.carregando = false;
       },
       error: () => { this.noticias = []; this.carregando = false; }
@@ -161,7 +161,6 @@ export class FeedComponent implements OnInit {
         n.titulo?.toLowerCase().includes(t) || n.descricao?.toLowerCase().includes(t)
     );
   }
-
   onGostei(noticia: Noticia): void {
     if (!noticia.id) return;
     this.interacaoService.curtir(noticia.id).subscribe({
@@ -169,18 +168,14 @@ export class FeedComponent implements OnInit {
         const atual = this.mapaInteracoes.get(noticia.id!) ?? { curtido: false, salvo: false };
         this.mapaInteracoes.set(noticia.id!, { ...atual, curtido: i.curtido });
 
-        noticia.likedByUser = i.curtido;
-
-        const original = this.todasNoticias.find(n => n.id === noticia.id);
-        if (original && original !== noticia) {
-          original.likedByUser = i.curtido;
-        }
+        // Sincroniza o booleano em todas as instâncias da memória
+        this.todasNoticias.forEach(n => { if (n.id === noticia.id) n.likedByUser = i.curtido; });
+        this.noticias.forEach(n => { if (n.id === noticia.id) n.likedByUser = i.curtido; });
 
         if (this.filtroAtivo === 'curtidos') {
           this.noticias = this.todasNoticias.filter(n => n.likedByUser);
         }
-      },
-      error: () => {}
+      }
     });
   }
 
@@ -191,18 +186,14 @@ export class FeedComponent implements OnInit {
         const atual = this.mapaInteracoes.get(noticia.id!) ?? { curtido: false, salvo: false };
         this.mapaInteracoes.set(noticia.id!, { ...atual, salvo: i.salvo });
 
-        noticia.savedByUser = i.salvo;
-
-        const original = this.todasNoticias.find(n => n.id === noticia.id);
-        if (original && original !== noticia) {
-          original.savedByUser = i.salvo;
-        }
+        // Sincroniza o booleano em todas as instâncias da memória
+        this.todasNoticias.forEach(n => { if (n.id === noticia.id) n.savedByUser = i.salvo; });
+        this.noticias.forEach(n => { if (n.id === noticia.id) n.savedByUser = i.salvo; });
 
         if (this.filtroAtivo === 'ler-mais-tarde') {
           this.noticias = this.todasNoticias.filter(n => n.savedByUser);
         }
-      },
-      error: () => {}
+      }
     });
   }
 

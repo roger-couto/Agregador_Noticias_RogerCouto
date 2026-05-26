@@ -130,6 +130,7 @@ public class NewsService {
                 String urlNoticia = node.path("url").asText();
                 if (titulo.equals("[Removed]") || titulo.isBlank() || urlNoticia.isBlank()) continue;
 
+                // Garante o retorno do objeto persistido com ID válido se já existir no banco
                 News news = newsRepository.findByUrl(urlNoticia).orElseGet(() -> {
                     News nova = new News();
                     nova.setTitulo(titulo);
