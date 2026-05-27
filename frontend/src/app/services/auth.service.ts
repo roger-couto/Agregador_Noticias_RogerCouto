@@ -43,7 +43,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    return localStorage.getItem(this.TOKEN_KEY); // sem verificação aqui
   }
 
   getUser(): { nome: string; email: string; id: number } | null {
@@ -51,7 +51,24 @@ export class AuthService {
     return u ? JSON.parse(u) : null;
   }
 
+  isTokenExpirado(): boolean {
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    if (!token) return false; // sem token não é "expirado", é só ausente
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp * 1000 < Date.now();
+    } catch {
+      return true;
+    }
+  }
+
   isLoggedIn(): boolean {
-    return !!this.getToken();
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    if (!token) return false;
+    if (this.isTokenExpirado()) {
+      this.logout();
+      return false;
+    }
+    return true;
   }
 }

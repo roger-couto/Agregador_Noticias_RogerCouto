@@ -31,6 +31,21 @@ export class FeedComponent implements OnInit {
 
   private mapaInteracoes = new Map<number, { curtido: boolean; salvo: boolean }>();
 
+  private garantirMapaEFiltrar(callback: () => void): void {
+    if (this.mapaInteracoes.size === 0 && this.auth.isLoggedIn()) {
+      this.interacaoService.minhas().subscribe({
+        next: (interacoes) => {
+          this.mapaInteracoes.clear();
+          interacoes.forEach(i => this.mapaInteracoes.set(i.newsId, { curtido: i.curtido, salvo: i.salvo }));
+          callback();
+        },
+        error: () => callback()
+      });
+    } else {
+      callback();
+    }
+  }
+
   // Portais divididos em dois blocos organizados em ordem alfabética
   portaisBr = ['ESTADÃO', 'EXAME', 'GLOBO / G1', 'IGN BRASIL', 'METRÓPOLES', 'UOL'];
   portaisGringos = ['BBC NEWS', 'BLOOMBERG', 'CNN', 'REUTERS', 'TECHCRUNCH', 'THE NEW YORK TIMES'];
@@ -76,7 +91,13 @@ export class FeedComponent implements OnInit {
         interacoes.forEach(i => this.mapaInteracoes.set(i.newsId, { curtido: i.curtido, salvo: i.salvo }));
         this.carregarRecentes();
       },
-      error: () => this.carregarRecentes()
+      error: (err) => {
+        if (err.status === 401 || err.status === 403) {
+          this.auth.logout();
+        } else {
+          this.carregarRecentes();
+        }
+      }
     });
   }
 
@@ -109,24 +130,51 @@ export class FeedComponent implements OnInit {
 
   verCurtidos(): void {
     this.filtroAtivo = 'curtidos';
-    this.noticias = this.todasNoticias.filter(n => n.likedByUser);
+    this.carregando = true;
+    const ids = Array.from(this.mapaInteracoes.entries())
+        .filter(([_, v]) => v.curtido)
+        .map(([id]) => id);
+    if (ids.length === 0) { this.noticias = []; this.carregando = false; return; }
+    this.newsService.getPorIds(ids).subscribe({
+      next: (data) => {
+        this.noticias = this.aplicarInteracoesNaLista(data);
+        this.carregando = false;
+      },
+      error: () => { this.noticias = []; this.carregando = false; }
+    });
   }
 
   verLerMaisTarde(): void {
     this.filtroAtivo = 'ler-mais-tarde';
-    this.noticias = this.todasNoticias.filter(n => n.savedByUser);
+    this.carregando = true;
+    const ids = Array.from(this.mapaInteracoes.entries())
+        .filter(([_, v]) => v.salvo)
+        .map(([id]) => id);
+    if (ids.length === 0) { this.noticias = []; this.carregando = false; return; }
+    this.newsService.getPorIds(ids).subscribe({
+      next: (data) => {
+        this.noticias = this.aplicarInteracoesNaLista(data);
+        this.carregando = false;
+      },
+      error: () => { this.noticias = []; this.carregando = false; }
+    });
   }
 
   selecionarTag(tag: string): void {
     const tagLimpa = tag.replace('#', '');
     this.filtroAtivo = tagLimpa;
-    this.newsService.getPorTag(tagLimpa).subscribe(this.handlerFiltro());
+    this.garantirMapaEFiltrar(() =>
+        this.newsService.getPorTag(tagLimpa).subscribe(this.handlerFiltro())
+    );
   }
 
   selecionarPortal(portal: string): void {
     this.filtroAtivo = portal;
-    this.newsService.getPorPortal(portal).subscribe(this.handlerFiltro());
+    this.garantirMapaEFiltrar(() =>
+        this.newsService.getPorPortal(portal).subscribe(this.handlerFiltro())
+    );
   }
+
   private handlerFiltro() {
     this.carregando = true;
     const mapaExistentes = new Map<number, Noticia>();

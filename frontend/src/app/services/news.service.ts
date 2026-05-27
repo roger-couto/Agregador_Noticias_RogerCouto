@@ -28,4 +28,8 @@ export class NewsService {
   salvarParaDepois(id: number): Observable<Noticia> {
     return this.http.patch<Noticia>(`${this.API}/${id}/ler-depois`, {});
   }
+
+  getPorIds(ids: number[]): Observable<Noticia[]> {
+    return this.http.post<Noticia[]>(`${this.API}/porIds`, ids);
+  }
 }

@@ -7,6 +7,7 @@ import br.com.agora.api.domain.service.NewsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,5 +65,15 @@ public class NewsController {
     @PatchMapping("/{id}/ler-depois")
     public ResponseEntity<NoticiaDTO> lerDepois(@PathVariable Long id) {
         return ResponseEntity.ok(newsService.salvarParaDepois(id));
+    }
+
+    @PostMapping("/porIds")
+    public ResponseEntity<List<NoticiaDTO>> porIds(@RequestBody List<Long> ids) {
+        List<NoticiaDTO> dtos = ids.stream()
+                .map(id -> newsRepository.findById(id))
+                .filter(Optional::isPresent)
+                .map(opt -> newsService.toDTO(opt.get()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 }
