@@ -1,6 +1,23 @@
 # ÁGORA – Agregador de Notícias
 **Projeto Integrador – Sistemas para Internet**
-Aluno: Róger Couto | RA: 202211045
+Aluno: Róger Couto 202211045
+
+---
+
+# 🚀 Implantação e Deploy com Docker - Projeto Ágora
+
+## 📋 Pré-requisitos
+* Docker Desktop instalado e em execução.
+* Docker Compose instalado.
+
+## ⚙️ Configurações Iniciais
+As variáveis de ambiente para conexão do Spring Boot com o banco PostgreSQL já estão pré-configuradas no arquivo `docker-compose.yml`. O back-end aguarda a inicialização do banco de dados antes de iniciar suas atividades.
+
+## 🛠️ Como Executar a Aplicação
+1. Abra o terminal na raiz do projeto (onde está localizado o arquivo `docker-compose.yml`).
+2. Execute o comando de build e inicialização:
+   ```bash
+   docker-compose up --build
 
 ---
 
@@ -130,9 +147,3 @@ agora-project/
 ```
 
 ---
-
-## Cronograma (conforme Entrega 1)
-- ✅ **Entrega 1** (09/04/2025) — Escopo, requisitos, casos de uso
-- ✅ **Entrega 2** (07/05/2025) — Modelagem DB, arquitetura API, prototipagem UI
-- 🔲 **50% implementado** (28/05/2025)
-- 🔲 **100% implementado** (30/06/2025)

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Banco de Dados PostgreSQL oficial do seu pom.xml
+  db:
+    image: postgres:15-alpine
+    container_name: agora_db
+    environment:
+      POSTGRES_DB: agora
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: sua_senha_aqui
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Back-end Spring Boot (Java 21)
+  backend:
+    build: ./backend
+    container_name: agora_backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/agora
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=sua_senha_aqui
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
+  # Front-end Angular
+  frontend:
+    build: ./frontend
+    container_name: agora_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

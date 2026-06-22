@@ -14,7 +14,7 @@ public class NoticiaDTO {
     private int gostei;
     private int lerDepois;
 
-    public NoticiaDTO() {}
+    public NoticiaDTO(Long id, String titulo, String descricao, String url, String imageUrl, String portal, LocalDateTime publicadoEm, int gostei, int lerDepois) {}
 
     public NoticiaDTO(Long id, String titulo, String descricao, String url,
                       String imageUrl, String portal, String tag,

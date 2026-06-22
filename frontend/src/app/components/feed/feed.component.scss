@@ -64,6 +64,7 @@
   &.ativo { color: var(--gold); background: rgba(255,255,255,0.06); text-shadow: 0 0 16px rgba(212,175,55,0.7); }
 }
 
+/* Estilos de seção e portais aplicam-se perfeitamente na barra da direita */
 .sidebar-secao { padding: 1.25rem 1.5rem; }
 
 .secao-label {
@@ -76,7 +77,6 @@
   font-weight: 700;
 }
 
-/* Margem de distanciamento para o segundo bloco de portais */
 .secao-gringos {
   margin-top: 2.25rem;
 }
@@ -262,7 +262,7 @@
 }
 
 /* ======= SIDEBAR DIREITA ======= */
-.topicos-sidebar {
+.direita-sidebar {
   background: rgba(0,0,0,0.15);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -334,7 +334,7 @@
   flex-shrink: 0;
 }
 
-/* Dropdown desce abaixo do bloco */
+/* Dropdown */
 .usuario-dropdown {
   position: absolute;
   top: calc(100% + 6px);
@@ -379,41 +379,4 @@
   height: 1px;
   background: rgba(255,255,255,0.08);
   margin: 0.3rem 0.4rem;
-}
-
-/* Tags */
-.topicos-titulo {
-  display: block;
-  font-size: 0.65rem;
-  letter-spacing: 0.25em;
-  color: rgba(255,255,255,0.3);
-  margin: 1.5rem 1.25rem 1rem;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
-.topicos-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-  padding: 0 1rem;
-}
-
-.tag-btn {
-  padding: 0.6rem 0.4rem;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
-  color: rgba(255,255,255,0.55);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: all 0.25s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  &:hover { background: rgba(212,175,55,0.12); border-color: rgba(212,175,55,0.5); color: var(--gold); transform: translateY(-1px); }
-  &.ativo { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); }
 }

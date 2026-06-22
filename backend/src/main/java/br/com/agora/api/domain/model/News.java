@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "tb_news")
+@Table(name = "tb_news") //diz para o hibernate que representa a tabela tb_news
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,13 +18,13 @@ public class News {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 500)
+    @Column(nullable = false, length = 500) //impede nulo titulo
     private String titulo;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT") //permite descricoes longas
     private String descricao;
 
-    @Column(length = 1000)
+    @Column(length = 1000) //tamanho max da url
     private String url;
 
     @Column(length = 1000)
@@ -32,11 +32,9 @@ public class News {
 
     private String portal;   // G1, BBC News, CNN, New York Times
 
-    private String tag;      // Tecnologia, Economia, etc.
-
     private LocalDateTime publicadoEm;
 
-    private int gostei = 0;
+    private int gostei = 0; //contadores globais (ainda n implementado)
 
     private int lerDepois = 0;
 }

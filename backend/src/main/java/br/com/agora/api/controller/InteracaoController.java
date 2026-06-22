@@ -1,10 +1,12 @@
 package br.com.agora.api.controller;
 
 import br.com.agora.api.config.JwtService;
+import br.com.agora.api.config.TokenInvalidoException;
 import br.com.agora.api.domain.model.Interacao;
 import br.com.agora.api.domain.repository.UserRepository;
 import br.com.agora.api.domain.service.InteracaoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,13 +28,23 @@ public class InteracaoController {
 
     private Long extrairUsuarioId(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new RuntimeException("Token ausente ou inválido");
+            throw new TokenInvalidoException("Token ausente ou em formato inválido. Faça login novamente.");
         }
         String token = authHeader.substring(7);
+
+        if (!jwtService.validarToken(token)) {
+            throw new TokenInvalidoException("Token inválido ou expirado. Faça login novamente.");
+        }
+
         String email = jwtService.extrairEmail(token);
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"))
+                .orElseThrow(() -> new TokenInvalidoException("Usuário do token não foi encontrado."))
                 .getId();
+    }
+
+    @ExceptionHandler(TokenInvalidoException.class)
+    public ResponseEntity<String> tratarTokenInvalido(TokenInvalidoException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
     }
 
     @PostMapping("/{newsId}/curtir")

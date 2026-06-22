@@ -31,7 +31,7 @@ export class FeedComponent implements OnInit {
 
   private mapaInteracoes = new Map<number, { curtido: boolean; salvo: boolean }>();
 
-  private garantirMapaEFiltrar(callback: () => void): void {
+  private garantizarMapaEFiltrar(callback: () => void): void {
     if (this.mapaInteracoes.size === 0 && this.auth.isLoggedIn()) {
       this.interacaoService.minhas().subscribe({
         next: (interacoes) => {
@@ -47,10 +47,8 @@ export class FeedComponent implements OnInit {
   }
 
   // Portais divididos em dois blocos organizados em ordem alfabética
-  portaisBr = ['ESTADÃO', 'EXAME', 'GLOBO / G1', 'IGN BRASIL', 'METRÓPOLES', 'UOL'];
+  portaisBr = ['ESTADÃO', 'EXAME', 'IGN BRASIL', 'METRÓPOLES', 'UOL'];
   portaisGringos = ['BBC NEWS', 'BLOOMBERG', 'CNN', 'REUTERS', 'TECHCRUNCH', 'THE NEW YORK TIMES'];
-
-  tags = ['#TECNOLOGIA', '#LAZER', '#ECONOMIA', '#ESPORTE', '#POLÍTICA', '#SAÚDE', '#CIÊNCIA', '#CULTURA'];
 
   constructor(
       private newsService: NewsService,
@@ -160,17 +158,9 @@ export class FeedComponent implements OnInit {
     });
   }
 
-  selecionarTag(tag: string): void {
-    const tagLimpa = tag.replace('#', '');
-    this.filtroAtivo = tagLimpa;
-    this.garantirMapaEFiltrar(() =>
-        this.newsService.getPorTag(tagLimpa).subscribe(this.handlerFiltro())
-    );
-  }
-
   selecionarPortal(portal: string): void {
     this.filtroAtivo = portal;
-    this.garantirMapaEFiltrar(() =>
+    this.garantizarMapaEFiltrar(() =>
         this.newsService.getPorPortal(portal).subscribe(this.handlerFiltro())
     );
   }
@@ -185,7 +175,6 @@ export class FeedComponent implements OnInit {
         const novasNoticiasTratadas = this.aplicarInteracoesNaLista(data.map(n => mapaExistentes.get(n.id!) ?? n));
         this.noticias = novasNoticiasTratadas;
 
-        // Atualiza ou insere no repositório global sem gerar duplicatas
         novasNoticiasTratadas.forEach(nova => {
           if (nova.id) {
             const index = this.todasNoticias.findIndex(t => t.id === nova.id);
@@ -209,6 +198,7 @@ export class FeedComponent implements OnInit {
         n.titulo?.toLowerCase().includes(t) || n.descricao?.toLowerCase().includes(t)
     );
   }
+
   onGostei(noticia: Noticia): void {
     if (!noticia.id) return;
     this.interacaoService.curtir(noticia.id).subscribe({
@@ -216,7 +206,6 @@ export class FeedComponent implements OnInit {
         const atual = this.mapaInteracoes.get(noticia.id!) ?? { curtido: false, salvo: false };
         this.mapaInteracoes.set(noticia.id!, { ...atual, curtido: i.curtido });
 
-        // Sincroniza o booleano em todas as instâncias da memória
         this.todasNoticias.forEach(n => { if (n.id === noticia.id) n.likedByUser = i.curtido; });
         this.noticias.forEach(n => { if (n.id === noticia.id) n.likedByUser = i.curtido; });
 
@@ -234,7 +223,6 @@ export class FeedComponent implements OnInit {
         const atual = this.mapaInteracoes.get(noticia.id!) ?? { curtido: false, salvo: false };
         this.mapaInteracoes.set(noticia.id!, { ...atual, salvo: i.salvo });
 
-        // Sincroniza o booleano em todas as instâncias da memória
         this.todasNoticias.forEach(n => { if (n.id === noticia.id) n.savedByUser = i.salvo; });
         this.noticias.forEach(n => { if (n.id === noticia.id) n.savedByUser = i.salvo; });
 
@@ -266,7 +254,7 @@ export class FeedComponent implements OnInit {
     return [
       { id: 1, titulo: 'Backend Java conectado com sucesso ao Ágora', descricao: 'O sistema Spring Boot está integrado e pronto para receber requisições do frontend Angular.', url: '#', portal: 'G1', publicadoEm: new Date(Date.now() - 120000).toISOString(), gostei: 0, lerDepois: 0, likedByUser: false, savedByUser: false },
       { id: 2, titulo: 'Arquitetura minimalista do Smart Journal foca na experiência do usuário', descricao: 'O projeto integra React, Angular e Spring Boot com PostgreSQL para entrega de notícias personalizadas.', url: '#', portal: 'BBC NEWS', publicadoEm: new Date(Date.now() - 900000).toISOString(), gostei: 0, lerDepois: 0, likedByUser: false, savedByUser: false },
-      { id: 3, titulo: 'Tecnologia de personalização de feeds avança com modelos de linguagem modernos', descricao: 'Pesquisadores desenvolvem algoritmos de recomendação que consideram o histórico de leitura.', url: '#', portal: 'CNN', publicadoEm: new Date(Date.now() - 3600000).toISOString(), gostei: 0, lerDepois: 0, likedByUser: false, savedByUser: false },
+      { id: 3, titulo: 'Tecnologia de personalização de feeds avança com modelos de linguagem modernos', descricao: 'Pesquisadores develops algoritmos de recomendação que consideram o histórico de leitura.', url: '#', portal: 'CNN', publicadoEm: new Date(Date.now() - 3600000).toISOString(), gostei: 0, lerDepois: 0, likedByUser: false, savedByUser: false },
     ];
   }
 }

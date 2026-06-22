@@ -1,6 +1,5 @@
 <div class="agora-layout">
 
-    <!-- ===== SIDEBAR ESQUERDA ===== -->
     <aside class="sidebar">
 
         <div class="sidebar-logo">
@@ -12,30 +11,6 @@
             <a class="nav-item" [class.ativo]="filtroAtivo === 'curtidos'" (click)="verCurtidos()">CURTIDOS</a>
             <a class="nav-item" [class.ativo]="filtroAtivo === 'ler-mais-tarde'" (click)="verLerMaisTarde()">LER MAIS TARDE</a>
         </nav>
-
-        <div class="sidebar-secao">
-            <span class="secao-label">PORTAIS NACIONAIS</span>
-            <ul class="portal-lista">
-                <li *ngFor="let portal of portaisBr"
-                    class="portal-item"
-                    [class.ativo]="filtroAtivo === portal"
-                    (click)="selecionarPortal(portal)">
-                    <span class="portal-dot"></span>
-                    {{ portal }}
-                </li>
-            </ul>
-
-            <span class="secao-label secao-gringos">PORTAIS INTERNACIONAIS</span>
-            <ul class="portal-lista">
-                <li *ngFor="let portal of portaisGringos"
-                    class="portal-item"
-                    [class.ativo]="filtroAtivo === portal"
-                    (click)="selecionarPortal(portal)">
-                    <span class="portal-dot"></span>
-                    {{ portal }}
-                </li>
-            </ul>
-        </div>
 
         <div class="sidebar-bottom">
             <button class="btn-temas" (click)="mostrarTemas = !mostrarTemas">
@@ -52,7 +27,6 @@
         </div>
     </aside>
 
-    <!-- ===== CONTEÚDO PRINCIPAL ===== -->
     <main class="conteudo-principal">
         <header class="topbar">
             <div class="busca-container">
@@ -83,10 +57,8 @@
         </section>
     </main>
 
-    <!-- ===== SIDEBAR DIREITA ===== -->
-    <aside class="topicos-sidebar">
+    <aside class="direita-sidebar">
 
-        <!-- Bloco usuário no topo direito — clicável com dropdown -->
         <div class="usuario-bloco" (click)="toggleDropdown($event)">
             <div class="usuario-info">
                 <span class="usuario-nome">{{ usuario?.nome || 'Usuário' }}</span>
@@ -94,7 +66,6 @@
             </div>
             <div class="usuario-avatar">{{ inicialUsuario }}</div>
 
-            <!-- Dropdown -->
             <div class="usuario-dropdown" *ngIf="mostrarDropdown" (click)="$event.stopPropagation()">
                 <button class="dropdown-item" (click)="irParaPrivacidade()">Privacidade</button>
                 <button class="dropdown-item" (click)="irParaConfiguracoes()">Configurações</button>
@@ -103,15 +74,28 @@
             </div>
         </div>
 
-        <span class="topicos-titulo">TÓPICOS</span>
-        <div class="topicos-grid">
-            <button
-                    *ngFor="let tag of tags"
-                    class="tag-btn"
-                    [class.ativo]="filtroAtivo === tag.replace('#', '')"
-                    (click)="selecionarTag(tag)">
-                {{ tag }}
-            </button>
+        <div class="sidebar-secao">
+            <span class="secao-label">PORTAIS NACIONAIS</span>
+            <ul class="portal-lista">
+                <li *ngFor="let portal of portaisBr"
+                    class="portal-item"
+                    [class.ativo]="filtroAtivo === portal"
+                    (click)="selecionarPortal(portal)">
+                    <span class="portal-dot"></span>
+                    {{ portal }}
+                </li>
+            </ul>
+
+            <span class="secao-label secao-gringos">PORTAIS INTERNACIONAIS</span>
+            <ul class="portal-lista">
+                <li *ngFor="let portal of portaisGringos"
+                    class="portal-item"
+                    [class.ativo]="filtroAtivo === portal"
+                    (click)="selecionarPortal(portal)">
+                    <span class="portal-dot"></span>
+                    {{ portal }}
+                </li>
+            </ul>
         </div>
     </aside>
 

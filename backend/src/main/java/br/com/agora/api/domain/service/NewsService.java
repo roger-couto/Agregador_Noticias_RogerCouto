@@ -18,10 +18,10 @@ import java.util.List;
 @Service
 public class NewsService {
 
-    @Value("${newsapi.key}")
+    @Value("${newsapi.key}") // Lê a chave da newsapi
     private String apiKey;
 
-    @Value("${newsapi.base-url}")
+    @Value("${newsapi.base-url}") // URL base do arq. application.properties
     private String baseUrl;
 
     private final NewsRepository newsRepository;
@@ -32,34 +32,14 @@ public class NewsService {
     public NewsService(NewsRepository newsRepository) {
         this.newsRepository = newsRepository;
     }
-    private static List<NoticiaDTO> cacheRecentes = null;
+
+    private static List<NoticiaDTO> cacheRecentes = null; // Cache em memória para feed
     private static long cacheRecentesTimestamp = 0;
-    private static final long CACHE_TTL_MS = 30 * 60 * 1000;
-
-    private String resolverQuery(String tag) {
-        return switch (tag.toLowerCase()) {
-            case "tecnologia" -> "tecnologia OR inteligência artificial";
-            case "economia"   -> "economia OR mercado financeiro";
-            case "política"   -> "política brasileira";
-            case "esporte"    -> "futebol OR esportes";
-            case "saúde"      -> "saúde OR medicina";
-            case "ciência"    -> "ciência OR pesquisa";
-            case "cultura"    -> "cultura OR arte OR cinema";
-            case "lazer"      -> "lazer OR entretenimento OR turismo";
-            default           -> tag;
-        };
-    }
-
-    public List<NoticiaDTO> buscarPorTag(String tag) {
-        String query = resolverQuery(tag);
-        String url = baseUrl + "/everything?q=" + encode(query)
-                + "&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-        return fetchEConverter(url, tag, null);
-    }
+    private static final long CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
 
     public List<NoticiaDTO> buscarPorPortal(String portal) {
         String url;
-        // Corrige o aviso removendo a substituição redundante de espaços
+        // Normalizar as palavras que vêm do front
         String portalChave = portal.trim().toLowerCase().replace("/", "-");
         portalChave = java.text.Normalizer.normalize(portalChave, java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")
@@ -80,25 +60,25 @@ public class NewsService {
             case "ign brasil" ->
                     url = baseUrl + "/everything?domains=ign.com&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
 
-            // INTERNACIONAIS
+            // INTERNACIONAIS (forçando language=en)
             case "bbc news" ->
-                    url = baseUrl + "/everything?sources=bbc-news&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+                    url = baseUrl + "/everything?sources=bbc-news&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
             case "bloomberg" ->
-                    url = baseUrl + "/everything?sources=bloomberg&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+                    url = baseUrl + "/everything?sources=bloomberg&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
             case "cnn" ->
-                    url = baseUrl + "/everything?sources=cnn&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+                    url = baseUrl + "/everything?sources=cnn&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
             case "reuters" ->
-                    url = baseUrl + "/everything?q=reuters&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+                    url = baseUrl + "/everything?q=reuters&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
             case "techcrunch" ->
-                    url = baseUrl + "/everything?sources=techcrunch&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+                    url = baseUrl + "/everything?sources=techcrunch&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
             case "the new york times" ->
-                    url = baseUrl + "/everything?q=\"new york times\"&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
+                    url = baseUrl + "/everything?q=\"new york times\"&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
 
             default ->
                     url = baseUrl + "/everything?q=" + encode(portal) + "&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
         }
 
-        return fetchEConverter(url, null, portal);
+        return fetchEConverter(url, portal);
     }
 
     public List<NoticiaDTO> buscarRecentes() {
@@ -108,8 +88,9 @@ public class NewsService {
                     + ((CACHE_TTL_MS - (agora - cacheRecentesTimestamp)) / 60000) + " min");
             return cacheRecentes;
         }
+
         String url = baseUrl + "/everything?q=brasil&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-        List<NoticiaDTO> resultado = fetchEConverter(url, null, null);
+        List<NoticiaDTO> resultado = fetchEConverter(url, null);
         if (!resultado.isEmpty()) {
             cacheRecentes = resultado;
             cacheRecentesTimestamp = agora;
@@ -118,7 +99,7 @@ public class NewsService {
         return (resultado.isEmpty() && cacheRecentes != null) ? cacheRecentes : resultado;
     }
 
-    private List<NoticiaDTO> fetchEConverter(String url, String tag, String portal) {
+    private List<NoticiaDTO> fetchEConverter(String url, String portal) {
         List<NoticiaDTO> resultado = new ArrayList<>();
         try {
             String json = restTemplate.getForObject(url, String.class);
@@ -126,21 +107,39 @@ public class NewsService {
             JsonNode articles = root.path("articles");
 
             for (JsonNode node : articles) {
-                String titulo = node.path("title").asText();
-                String urlNoticia = node.path("url").asText();
-                if (titulo.equals("[Removed]") || titulo.isBlank() || urlNoticia.isBlank()) continue;
+                String titulo = node.path("title").asText("");
+                String urlNoticia = node.path("url").asText("");
+                if (titulo.isBlank() || titulo.equals("null") || titulo.equals("[Removed]") || urlNoticia.isBlank()) continue;
 
-                // Garante o retorno do objeto persistido com ID válido se já existir no banco
-                News news = newsRepository.findByUrl(urlNoticia).orElseGet(() -> {
+                String descricao = node.path("description").asText("");
+                if (descricao.equals("null")) descricao = "";
+                String imageUrl = node.path("urlToImage").asText("");
+                if (imageUrl.equals("null")) imageUrl = "";
+
+                final String tituloFinal = titulo;
+                final String descricaoFinal = descricao;
+                final String imageUrlFinal = imageUrl;
+
+                News news = newsRepository.findByUrl(urlNoticia).map(existente -> {
+                    boolean tituloInvalidoSalvo = existente.getTitulo() == null
+                            || existente.getTitulo().isBlank()
+                            || existente.getTitulo().equals("null");
+                    if (tituloInvalidoSalvo) {
+                        existente.setTitulo(tituloFinal);
+                        existente.setDescricao(descricaoFinal);
+                        existente.setImageUrl(imageUrlFinal);
+                        return newsRepository.save(existente);
+                    }
+                    return existente;
+                }).orElseGet(() -> {
                     News nova = new News();
-                    nova.setTitulo(titulo);
-                    nova.setDescricao(node.path("description").asText());
+                    nova.setTitulo(tituloFinal);
+                    nova.setDescricao(descricaoFinal);
                     nova.setUrl(urlNoticia);
-                    nova.setImageUrl(node.path("urlToImage").asText());
-                    nova.setPortal(portal != null ? portal : node.path("source").path("name").asText());
-                    nova.setTag(tag);
+                    nova.setImageUrl(imageUrlFinal);
+                    nova.setPortal(portal != null ? portal : node.path("source").path("name").asText(""));
 
-                    String publishedAt = node.path("publishedAt").asText();
+                    String publishedAt = node.path("publishedAt").asText("");
                     if (!publishedAt.isBlank()) {
                         nova.setPublicadoEm(OffsetDateTime.parse(publishedAt).toLocalDateTime());
                     } else {
@@ -151,17 +150,25 @@ public class NewsService {
 
                 resultado.add(toDTO(news));
             }
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            System.err.println("[NewsService] NewsAPI retornou erro HTTP " + e.getStatusCode()
+                    + " - " + e.getResponseBodyAsString());
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            System.err.println("[NewsService] Falha de rede ao chamar NewsAPI: " + e.getMessage());
         } catch (Exception e) {
-            System.err.println("[NewsService] Erro ao buscar noticias: " + e.getMessage());
+            System.err.println("[NewsService] Erro inesperado ao buscar noticias: " + e.getMessage());
+            e.printStackTrace();
         }
         return resultado;
     }
 
     public NoticiaDTO toDTO(News news) {
+        // ATENÇÃO: Removi o parâmetro 'news.getTag()' daqui.
+        // Lembre-se de remover o atributo 'tag' de dentro da sua classe NoticiaDTO e da classe News!
         return new NoticiaDTO(
                 news.getId(), news.getTitulo(), news.getDescricao(),
                 news.getUrl(), news.getImageUrl(), news.getPortal(),
-                news.getTag(), news.getPublicadoEm(), news.getGostei(), news.getLerDepois()
+                news.getPublicadoEm(), news.getGostei(), news.getLerDepois()
         );
     }
 
