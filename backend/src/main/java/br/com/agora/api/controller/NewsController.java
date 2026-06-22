@@ -29,12 +29,6 @@ public class NewsController {
         return ResponseEntity.ok(newsService.buscarRecentes());
     }
 
-    // GET /api/news/tag/{tag} - filtrar por topico
-    @GetMapping("/tag/{tag}")
-    public ResponseEntity<List<NoticiaDTO>> porTag(@PathVariable String tag) {
-        System.out.println("[NewsController] tag recebida: '" + tag + "'");
-        return ResponseEntity.ok(newsService.buscarPorTag(tag));
-    }
 
     // GET /api/news/portal/{portal} - filtrar por portal
     @GetMapping("/portal/{portal}")
