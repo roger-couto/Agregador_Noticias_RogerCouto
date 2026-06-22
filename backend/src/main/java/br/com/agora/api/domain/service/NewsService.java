@@ -163,8 +163,6 @@ public class NewsService {
     }
 
     public NoticiaDTO toDTO(News news) {
-        // ATENÇÃO: Removi o parâmetro 'news.getTag()' daqui.
-        // Lembre-se de remover o atributo 'tag' de dentro da sua classe NoticiaDTO e da classe News!
         return new NoticiaDTO(
                 news.getId(), news.getTitulo(), news.getDescricao(),
                 news.getUrl(), news.getImageUrl(), news.getPortal(),
