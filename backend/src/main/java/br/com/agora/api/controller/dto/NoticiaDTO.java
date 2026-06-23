@@ -9,15 +9,12 @@ public class NoticiaDTO {
     private String url;
     private String imageUrl;
     private String portal;
-    private String tag;
     private LocalDateTime publicadoEm;
     private int gostei;
     private int lerDepois;
 
-    public NoticiaDTO(Long id, String titulo, String descricao, String url, String imageUrl, String portal, LocalDateTime publicadoEm, int gostei, int lerDepois) {}
-
     public NoticiaDTO(Long id, String titulo, String descricao, String url,
-                      String imageUrl, String portal, String tag,
+                      String imageUrl, String portal,
                       LocalDateTime publicadoEm, int gostei, int lerDepois) {
         this.id = id;
         this.titulo = titulo;
@@ -25,7 +22,6 @@ public class NoticiaDTO {
         this.url = url;
         this.imageUrl = imageUrl;
         this.portal = portal;
-        this.tag = tag;
         this.publicadoEm = publicadoEm;
         this.gostei = gostei;
         this.lerDepois = lerDepois;
@@ -43,8 +39,6 @@ public class NoticiaDTO {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public String getPortal() { return portal; }
     public void setPortal(String portal) { this.portal = portal; }
-    public String getTag() { return tag; }
-    public void setTag(String tag) { this.tag = tag; }
     public LocalDateTime getPublicadoEm() { return publicadoEm; }
     public void setPublicadoEm(LocalDateTime publicadoEm) { this.publicadoEm = publicadoEm; }
     public int getGostei() { return gostei; }
