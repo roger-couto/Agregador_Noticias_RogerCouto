@@ -12,7 +12,6 @@ public interface NewsRepository extends JpaRepository<News, Long> {
 
 
     Optional<News> findByUrl(String url);
-    List<News> findByTagIgnoreCaseOrderByPublicadoEmDesc(String tag);
     List<News> findByPortalIgnoreCaseOrderByPublicadoEmDesc(String portal);
     List<News> findAllByOrderByPublicadoEmDesc();
 }
