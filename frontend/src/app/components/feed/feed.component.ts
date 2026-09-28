@@ -280,8 +280,6 @@ export class FeedComponent implements OnInit {
           this.noticias = this.todasNoticias.filter(n => n.likedByUser);
         } else if (this.filtroAtivo === 'ler-mais-tarde') {
           this.noticias = this.todasNoticias.filter(n => n.savedByUser);
-        } else if (this.filtroAtivo === 'para-voce') {
-          this.carregarParaVoce();
         }
       },
       error: () => {
