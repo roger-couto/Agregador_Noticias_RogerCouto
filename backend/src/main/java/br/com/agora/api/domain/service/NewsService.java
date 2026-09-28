@@ -8,12 +8,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.text.Normalizer;
 
 @Service
 public class NewsService {
@@ -38,135 +44,85 @@ public class NewsService {
         this.clusterizacaoService = clusterizacaoService;
     }
 
-    private static List<NoticiaDTO> cacheRecentes = null; // Cache em memória para feed
-    private static long cacheRecentesTimestamp = 0;
-    private static final long CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
+    public boolean isNewsApiConfigurada() {
+        return apiKey != null && !apiKey.isBlank();
+    }
 
     public List<NoticiaDTO> buscarPorPortal(String portal) {
-        String url;
-        // Normalizar as palavras que vêm do front
-        String portalChave = portal.trim().toLowerCase().replace("/", "-");
-        portalChave = java.text.Normalizer.normalize(portalChave, java.text.Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .replaceAll("\\s+", " ");
-
-        switch (portalChave) {
-            // NACIONAIS
-            case "globo - g1", "globo-g1", "globo g1", "g1", "globo" ->
-                    url = baseUrl + "/everything?q=g1 OR globo&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-            case "metropoles" ->
-                    url = baseUrl + "/everything?domains=metropoles.com&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-            case "uol" ->
-                    url = baseUrl + "/everything?domains=uol.com.br&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-            case "estadao" ->
-                    url = baseUrl + "/everything?q=estadao&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-            case "exame" ->
-                    url = baseUrl + "/everything?domains=exame.com&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-            case "ign brasil" ->
-                    url = baseUrl + "/everything?domains=ign.com&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-
-            // INTERNACIONAIS (forçando language=en)
-            case "bbc news" ->
-                    url = baseUrl + "/everything?sources=bbc-news&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-            case "bloomberg" ->
-                    url = baseUrl + "/everything?sources=bloomberg&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-            case "cnn" ->
-                    url = baseUrl + "/everything?sources=cnn&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-            case "reuters" ->
-                    url = baseUrl + "/everything?q=reuters&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-            case "techcrunch" ->
-                    url = baseUrl + "/everything?sources=techcrunch&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-            case "the new york times" ->
-                    url = baseUrl + "/everything?q=\"new york times\"&language=en&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-
-            default ->
-                    url = baseUrl + "/everything?q=" + encode(portal) + "&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-        }
-
-        return fetchEConverter(url, portal);
+        String chave = normalizarPortal(portal);
+        return newsRepository.findAllByOrderByPublicadoEmDesc().stream()
+                .filter(news -> normalizarPortal(news.getPortal()).equals(chave))
+                .limit(60)
+                .map(this::toDTO)
+                .toList();
     }
 
     public List<NoticiaDTO> buscarRecentes() {
-        long agora = System.currentTimeMillis();
-        if (cacheRecentes != null && (agora - cacheRecentesTimestamp) < CACHE_TTL_MS) {
-            System.out.println("[NewsService] Cache ativo, próxima atualização em "
-                    + ((CACHE_TTL_MS - (agora - cacheRecentesTimestamp)) / 60000) + " min");
-            return cacheRecentes;
-        }
-
-        String url = baseUrl + "/everything?q=brasil&language=pt&sortBy=publishedAt&pageSize=60&apiKey=" + apiKey;
-        List<NoticiaDTO> resultado = fetchEConverter(url, null);
-        if (!resultado.isEmpty()) {
-            cacheRecentes = resultado;
-            cacheRecentesTimestamp = agora;
-            System.out.println("[NewsService] Cache de recentes updated");
-        }
-        return (resultado.isEmpty() && cacheRecentes != null) ? cacheRecentes : resultado;
+        return newsRepository.findTop60ByOrderByPublicadoEmDesc().stream().map(this::toDTO).toList();
     }
 
-    private List<NoticiaDTO> fetchEConverter(String url, String portal) {
-        List<News> resultado = new ArrayList<>();
-        try {
-            String json = restTemplate.getForObject(url, String.class);
-            JsonNode root = mapper.readTree(json);
-            JsonNode articles = root.path("articles");
-
-            for (JsonNode node : articles) {
-                String titulo = node.path("title").asText("");
-                String urlNoticia = node.path("url").asText("");
-                if (titulo.isBlank() || titulo.equals("null") || titulo.equals("[Removed]") || urlNoticia.isBlank()) continue;
-
-                String descricao = node.path("description").asText("");
-                if (descricao.equals("null")) descricao = "";
-                String imageUrl = node.path("urlToImage").asText("");
-                if (imageUrl.equals("null")) imageUrl = "";
-
-                final String tituloFinal = titulo;
-                final String descricaoFinal = descricao;
-                final String imageUrlFinal = imageUrl;
-
-                News news = newsRepository.findByUrl(urlNoticia).map(existente -> {
-                    boolean tituloInvalidoSalvo = existente.getTitulo() == null
-                            || existente.getTitulo().isBlank()
-                            || existente.getTitulo().equals("null");
-                    if (tituloInvalidoSalvo) {
-                        existente.setTitulo(tituloFinal);
-                        existente.setDescricao(descricaoFinal);
-                        existente.setImageUrl(imageUrlFinal);
-                        return newsRepository.save(existente);
-                    }
-                    return existente;
-                }).orElseGet(() -> {
-                    News nova = new News();
-                    nova.setTitulo(tituloFinal);
-                    nova.setDescricao(descricaoFinal);
-                    nova.setUrl(urlNoticia);
-                    nova.setImageUrl(imageUrlFinal);
-                    nova.setPortal(portal != null ? portal : node.path("source").path("name").asText(""));
-
-                    String publishedAt = node.path("publishedAt").asText("");
-                    if (!publishedAt.isBlank()) {
-                        nova.setPublicadoEm(OffsetDateTime.parse(publishedAt).toLocalDateTime());
-                    } else {
-                        nova.setPublicadoEm(LocalDateTime.now());
-                    }
-                    return newsRepository.save(nova);
-                });
-
-                resultado.add(news);
-            }
-        } catch (org.springframework.web.client.HttpClientErrorException e) {
-            System.err.println("[NewsService] NewsAPI retornou erro HTTP " + e.getStatusCode()
-                    + " - " + e.getResponseBodyAsString());
-        } catch (org.springframework.web.client.ResourceAccessException e) {
-            System.err.println("[NewsService] Falha de rede ao chamar NewsAPI: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("[NewsService] Erro inesperado ao buscar noticias: " + e.getMessage());
-            e.printStackTrace();
+    /** Consulta a API usando a chave no header e importa resultados deduplicados por URL. */
+    public int coletarDaNewsApi(String url, String portal) throws Exception {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("NEWSAPI_KEY não configurada");
         }
-        prepararPersonalizacao();
-        return resultado.stream().map(news -> newsRepository.findById(news.getId()).orElse(news))
-                .map(this::toDTO).toList();
+        List<News> resultado = new ArrayList<>();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Api-Key", apiKey);
+        ResponseEntity<String> response = restTemplate.exchange(
+                url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        JsonNode root = mapper.readTree(response.getBody());
+        if (!"ok".equalsIgnoreCase(root.path("status").asText())) {
+            throw new IllegalStateException("NewsAPI não confirmou a coleta: " + root.path("message").asText("erro sem detalhe"));
+        }
+        JsonNode articles = root.path("articles");
+
+        for (JsonNode node : articles) {
+            String titulo = node.path("title").asText("");
+            String urlNoticia = node.path("url").asText("");
+            if (titulo.isBlank() || titulo.equals("null") || titulo.equals("[Removed]") || urlNoticia.isBlank()) continue;
+
+            String descricao = node.path("description").asText("");
+            if (descricao.equals("null")) descricao = "";
+            String imageUrl = node.path("urlToImage").asText("");
+            if (imageUrl.equals("null")) imageUrl = "";
+
+            final String tituloFinal = titulo;
+            final String descricaoFinal = descricao;
+            final String imageUrlFinal = imageUrl;
+
+            News news = newsRepository.findByUrl(urlNoticia).map(existente -> {
+                boolean tituloInvalidoSalvo = existente.getTitulo() == null
+                        || existente.getTitulo().isBlank()
+                        || existente.getTitulo().equals("null");
+                if (tituloInvalidoSalvo) {
+                    existente.setTitulo(tituloFinal);
+                    existente.setDescricao(descricaoFinal);
+                    existente.setImageUrl(imageUrlFinal);
+                    newsRepository.save(existente);
+                }
+                if (portal != null && !portal.isBlank()) existente.setPortal(portal);
+                return newsRepository.save(existente);
+            }).orElseGet(() -> {
+                News nova = new News();
+                nova.setTitulo(tituloFinal);
+                nova.setDescricao(descricaoFinal);
+                nova.setUrl(urlNoticia);
+                nova.setImageUrl(imageUrlFinal);
+                nova.setPortal(portal != null ? portal : node.path("source").path("name").asText(""));
+
+                String publishedAt = node.path("publishedAt").asText("");
+                if (!publishedAt.isBlank()) {
+                    nova.setPublicadoEm(OffsetDateTime.parse(publishedAt).toLocalDateTime());
+                } else {
+                    nova.setPublicadoEm(LocalDateTime.now());
+                }
+                return newsRepository.save(nova);
+            });
+
+            resultado.add(news);
+        }
+        return resultado.size();
     }
 
     /** Processa somente registros sem vetor; a operação não consulta a NewsAPI. */
@@ -221,7 +177,10 @@ public class NewsService {
         return toDTO(newsRepository.save(news));
     }
 
-    private String encode(String s) {
-        return s.replace(" ", "%20");
+    private String normalizarPortal(String portal) {
+        if (portal == null) return "";
+        return Normalizer.normalize(portal.trim().toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replaceAll("\\s+", " ");
     }
 }

@@ -4,3 +4,6 @@ frontend/.angular/
 backend/.idea/
 target/
 npm-debug.log
+.env
+.env.*
+!.env.example

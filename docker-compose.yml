@@ -41,6 +41,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=sua_senha_aqui
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - EMBEDDING_SERVICE_URL=http://embeddings:8001
+      - NEWSAPI_KEY=${NEWSAPI_KEY:?Configure NEWSAPI_KEY no arquivo .env}
+      - JWT_SECRET=${JWT_SECRET:?Configure JWT_SECRET no arquivo .env}
 
   # Front-end Angular
   frontend:

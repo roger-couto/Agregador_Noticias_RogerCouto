@@ -4,6 +4,7 @@ import br.com.agora.api.controller.dto.NoticiaDTO;
 import br.com.agora.api.domain.model.News;
 import br.com.agora.api.domain.repository.NewsRepository;
 import br.com.agora.api.domain.service.NewsService;
+import br.com.agora.api.domain.service.NewsApiColetaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +24,13 @@ public class NewsController {
     @Autowired
     private NewsRepository newsRepository;
 
+    @Autowired
+    private NewsApiColetaService newsApiColetaService;
+
     // GET /api/news/recentes - noticias mais recentes (headline Brasil)
     @GetMapping("/recentes")
     public ResponseEntity<List<NoticiaDTO>> recentes() {
+        newsApiColetaService.coletarTemasSeNecessarios();
         return ResponseEntity.ok(newsService.buscarRecentes());
     }
 
@@ -33,6 +38,7 @@ public class NewsController {
     // GET /api/news/portal/{portal} - filtrar por portal
     @GetMapping("/portal/{portal}")
     public ResponseEntity<List<NoticiaDTO>> porPortal(@PathVariable String portal) {
+        newsApiColetaService.coletarPortalSeNecessario(portal);
         return ResponseEntity.ok(newsService.buscarPorPortal(portal));
     }
 

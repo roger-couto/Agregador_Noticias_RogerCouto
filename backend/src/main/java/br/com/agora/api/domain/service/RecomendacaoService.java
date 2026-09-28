@@ -75,13 +75,14 @@ public class RecomendacaoService {
         double beta = BETA_MINIMO + (BETA_MAXIMO - BETA_MINIMO)
                 * (1.0 - Math.exp(-evidencias / FATOR_CONFIANCA));
         LocalDateTime referencia = agora;
-        List<News> candidatas = newsRepository.findTop100ByEmbeddingIsNotNullOrderByPublicadoEmDesc();
+        List<News> candidatas = newsRepository.findTop1000ByEmbeddingIsNotNullOrderByPublicadoEmDesc();
         // Mantém a seção utilizável se os vetores ainda não estiverem prontos ou o modelo falhar.
         if (candidatas.isEmpty()) candidatas = newsRepository.findTop100ByOrderByPublicadoEmDesc();
         List<News> ordenadas = candidatas.stream()
                 .sorted(Comparator.comparingDouble((News noticia) -> pontuacao(noticia, preferencias, beta, referencia))
                         .reversed()
                         .thenComparing(News::getPublicadoEm, Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(60)
                 .toList();
 
         return new RecomendacaoDTO(

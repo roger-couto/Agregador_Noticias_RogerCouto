@@ -57,15 +57,26 @@ CREATE DATABASE agora_db;
 ```bash
 cd backend
 
-# Configure application.properties:
-# - newsapi.key=SUA_CHAVE_DA_NEWSAPI
-# - spring.datasource.password=SUA_SENHA_POSTGRES
+# Defina NEWSAPI_KEY e JWT_SECRET no ambiente de execução.
+# Para Docker Compose, copie .env.example para .env e preencha os valores.
+# Para IntelliJ, configure as mesmas variáveis na Run Configuration.
 
 # Executar:
 ./mvnw spring-boot:run
 ```
 
 O Spring criará as tabelas automaticamente via `ddl-auto=update`.
+
+### Coleta econômica da NewsAPI
+
+- O feed e os filtros passam a ler as notícias do PostgreSQL. Abrir “Para você” não consulta a NewsAPI.
+- Um coletor compartilhado faz quatro buscas temáticas (geral, política, esportes e tecnologia) uma vez a cada 24 horas. A consulta diária usa uma janela recente que considera o atraso de 24 horas informado no plano Developer.
+- Consultas de portal são feitas sob demanda e ficam registradas no banco; a mesma busca não é repetida para cada usuário nem quando o backend reinicia.
+- O coletor tem um teto local de **20 requisições por dia UTC**. O plano Developer informa um limite de 100 chamadas por dia; a margem restante cobre ajustes e consultas adicionais. A quantidade de artigos retornados não altera a contagem de chamadas.
+- Os resultados são deduplicados pela URL antes de salvar. Cada artigo novo recebe seu ID próprio, enquanto uma URL já conhecida reutiliza o registro existente.
+- O plano Developer informa atraso de 24 horas, busca de artigos até um mês atrás e uso permitido apenas para desenvolvimento e testes. A coleta não deve ser publicada como serviço de produção usando esse plano; confira os termos atuais antes de hospedar.
+
+Não envie uma chave real ao Git. O arquivo `.env` é ignorado pelo Git; `.env.example` contém apenas os nomes das variáveis. Como uma chave já esteve em um arquivo versionado, revogue-a no painel da NewsAPI e substitua por uma nova variável `NEWSAPI_KEY`. Defina também `JWT_SECRET` com pelo menos 32 caracteres aleatórios.
 
 **Endpoints disponíveis:**
 ```
