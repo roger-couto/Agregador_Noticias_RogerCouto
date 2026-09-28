@@ -12,4 +12,6 @@ export interface Noticia {
   // Estado local (não vem do backend)
   likedByUser?: boolean;
   savedByUser?: boolean;
+  moreByUser?: boolean;
+  lessByUser?: boolean;
 }

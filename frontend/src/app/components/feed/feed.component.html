@@ -8,6 +8,7 @@
 
         <nav class="sidebar-nav">
             <a class="nav-item" [class.ativo]="filtroAtivo === 'recentes'" (click)="carregarRecentes()">RECENTES</a>
+            <a class="nav-item" [class.ativo]="filtroAtivo === 'para-voce'" (click)="carregarParaVoce()">PARA VOCÊ</a>
             <a class="nav-item" [class.ativo]="filtroAtivo === 'curtidos'" (click)="verCurtidos()">CURTIDOS</a>
             <a class="nav-item" [class.ativo]="filtroAtivo === 'ler-mais-tarde'" (click)="verLerMaisTarde()">LER MAIS TARDE</a>
         </nav>
@@ -37,13 +38,20 @@
         </header>
 
         <section class="feed-area">
+            <div class="recomendacao-info" *ngIf="filtroAtivo === 'para-voce'">
+                <strong>Seu beta dinâmico: {{ betaAtual | percent:'1.0-1' }}</strong>
+                <span>Influência da personalização na ordem das notícias · {{ sinaisConsiderados }} sinais considerados</span>
+                <span *ngIf="sinaisPendentes > 0" class="sinais-pendentes">
+                    {{ sinaisPendentes }} interações aguardam o processamento do tema das notícias.
+                </span>
+            </div>
             <div *ngIf="erro" class="aviso-erro">⚠️ {{ erro }}</div>
             <div *ngIf="carregando" class="carregando">
                 <div class="loader-ring"></div>
                 <span>Buscando notícias...</span>
             </div>
             <div *ngIf="!carregando && noticiasFiltradas.length === 0 && !erro" class="vazio">
-                Nenhuma notícia encontrada.
+                {{ filtroAtivo === 'para-voce' ? 'Ainda não há notícias processadas para recomendar. Volte em instantes.' : 'Nenhuma notícia encontrada.' }}
             </div>
             <div class="cards-lista" *ngIf="!carregando">
                 <app-news-card
@@ -51,7 +59,10 @@
                         [noticia]="noticia"
                         [style.animation-delay]="(i * 0.06) + 's'"
                         (onGostei)="onGostei($event)"
-                        (onSalvar)="onSalvar($event)">
+                        (onSalvar)="onSalvar($event)"
+                        (onVerMais)="onVerMais($event)"
+                        (onVerMenos)="onVerMenos($event)"
+                        (onAbrirNoticia)="onAbrirNoticia($event)">
                 </app-news-card>
             </div>
         </section>

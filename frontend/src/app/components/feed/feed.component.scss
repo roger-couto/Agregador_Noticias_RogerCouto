@@ -261,6 +261,20 @@
   width: 100%;
 }
 
+.recomendacao-info {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: rgba(255,255,255,0.68);
+  font-size: 0.78rem;
+
+  strong { color: var(--gold); font-size: 0.9rem; }
+  .sinais-pendentes { color: #ffd18a; }
+}
+
 /* ======= SIDEBAR DIREITA ======= */
 .direita-sidebar {
   background: rgba(0,0,0,0.15);

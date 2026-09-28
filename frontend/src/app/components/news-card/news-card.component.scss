@@ -118,6 +118,8 @@
 
   &.gostei.ativo .icone { color: #f87171; }
   &.salvar.ativo { color: #34d399; border-color: rgba(52,211,153,0.5); background: rgba(52,211,153,0.1); }
+  &.ver-mais.ativo { color: #34d399; border-color: rgba(52,211,153,0.5); background: rgba(52,211,153,0.1); }
+  &.ver-menos.ativo { color: #f87171; border-color: rgba(248,113,113,0.5); background: rgba(248,113,113,0.1); }
 }
 
 .btn-link {

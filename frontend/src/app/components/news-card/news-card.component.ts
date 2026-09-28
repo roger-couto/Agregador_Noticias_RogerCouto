@@ -13,12 +13,23 @@ export class NewsCardComponent {
   @Input() noticia!: Noticia;
   @Output() onGostei = new EventEmitter<Noticia>();
   @Output() onSalvar = new EventEmitter<Noticia>();
+  @Output() onVerMais = new EventEmitter<Noticia>();
+  @Output() onVerMenos = new EventEmitter<Noticia>();
+  @Output() onAbrirNoticia = new EventEmitter<Noticia>();
 
   curtir(): void { this.onGostei.emit(this.noticia); }
   salvar(): void { this.onSalvar.emit(this.noticia); }
+  verMais(): void { this.onVerMais.emit(this.noticia); }
+  verMenos(): void { this.onVerMenos.emit(this.noticia); }
+
+  registrarCliqueNoLink(event: Event): void {
+    event.stopPropagation();
+    this.onAbrirNoticia.emit(this.noticia);
+  }
 
   abrirLink(): void {
     if (this.noticia.url && this.noticia.url !== '#') {
+      this.onAbrirNoticia.emit(this.noticia);
       window.open(this.noticia.url, '_blank', 'noopener');
     }
   }

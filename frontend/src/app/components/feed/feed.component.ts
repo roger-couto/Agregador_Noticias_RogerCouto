@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NewsService } from '../../services/news.service';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
-import { InteracaoService } from '../../services/interacao.service';
+import { FeedbackAcao, Interacao, InteracaoService } from '../../services/interacao.service';
 import { Noticia } from '../../models/noticia.model';
 import { Tema, TEMAS } from '../../models/tema.model';
 import { NewsCardComponent } from '../news-card/news-card.component';
@@ -20,6 +20,9 @@ export class FeedComponent implements OnInit {
   noticias: Noticia[] = [];
   todasNoticias: Noticia[] = [];
   carregando = false;
+  betaAtual = 0.15;
+  sinaisConsiderados = 0;
+  sinaisPendentes = 0;
   erro = '';
   filtroAtivo = 'recentes';
   termoBusca = '';
@@ -29,14 +32,14 @@ export class FeedComponent implements OnInit {
   temas = TEMAS;
   usuario: { nome: string; email: string; id: number } | null = null;
 
-  private mapaInteracoes = new Map<number, { curtido: boolean; salvo: boolean }>();
+  private mapaInteracoes = new Map<number, Pick<Interacao, 'curtido' | 'salvo' | 'verMais' | 'verMenos'>>();
 
   private garantizarMapaEFiltrar(callback: () => void): void {
     if (this.mapaInteracoes.size === 0 && this.auth.isLoggedIn()) {
       this.interacaoService.minhas().subscribe({
         next: (interacoes) => {
           this.mapaInteracoes.clear();
-          interacoes.forEach(i => this.mapaInteracoes.set(i.newsId, { curtido: i.curtido, salvo: i.salvo }));
+          interacoes.forEach(i => this.mapaInteracoes.set(i.newsId, this.estadoDaInteracao(i)));
           callback();
         },
         error: () => callback()
@@ -86,7 +89,7 @@ export class FeedComponent implements OnInit {
     this.interacaoService.minhas().subscribe({
       next: (interacoes) => {
         this.mapaInteracoes.clear();
-        interacoes.forEach(i => this.mapaInteracoes.set(i.newsId, { curtido: i.curtido, salvo: i.salvo }));
+        interacoes.forEach(i => this.mapaInteracoes.set(i.newsId, this.estadoDaInteracao(i)));
         this.carregarRecentes();
       },
       error: (err) => {
@@ -102,8 +105,23 @@ export class FeedComponent implements OnInit {
   private aplicarInteracoesNaLista(lista: Noticia[]): Noticia[] {
     return lista.map(n => {
       const estado = n.id != null ? this.mapaInteracoes.get(n.id) : undefined;
-      return { ...n, likedByUser: estado?.curtido ?? false, savedByUser: estado?.salvo ?? false };
+      return {
+        ...n,
+        likedByUser: estado?.curtido ?? false,
+        savedByUser: estado?.salvo ?? false,
+        moreByUser: estado?.verMais ?? false,
+        lessByUser: estado?.verMenos ?? false
+      };
     });
+  }
+
+  private estadoDaInteracao(interacao: Interacao): Pick<Interacao, 'curtido' | 'salvo' | 'verMais' | 'verMenos'> {
+    return {
+      curtido: interacao.curtido,
+      salvo: interacao.salvo,
+      verMais: interacao.verMais,
+      verMenos: interacao.verMenos
+    };
   }
 
   carregarRecentes(): void {
@@ -121,6 +139,27 @@ export class FeedComponent implements OnInit {
         this.todasNoticias = this.aplicarInteracoesNaLista(this.noticiasMock());
         this.noticias = this.todasNoticias;
         this.erro = 'Não foi possível carregar as notícias. Verifique se o backend está rodando.';
+        this.carregando = false;
+      }
+    });
+  }
+
+  carregarParaVoce(): void {
+    this.filtroAtivo = 'para-voce';
+    this.carregando = true;
+    this.erro = '';
+    this.interacaoService.paraVoce().subscribe({
+      next: (resposta) => {
+        this.betaAtual = resposta.beta;
+        this.sinaisConsiderados = resposta.sinaisConsiderados;
+        this.sinaisPendentes = resposta.sinaisPendentes;
+        this.todasNoticias = this.aplicarInteracoesNaLista(resposta.noticias);
+        this.noticias = this.todasNoticias;
+        this.carregando = false;
+      },
+      error: () => {
+        this.erro = 'Não foi possível carregar suas recomendações. Tente novamente.';
+        this.noticias = [];
         this.carregando = false;
       }
     });
@@ -200,37 +239,67 @@ export class FeedComponent implements OnInit {
   }
 
   onGostei(noticia: Noticia): void {
-    if (!noticia.id) return;
-    this.interacaoService.curtir(noticia.id).subscribe({
-      next: (i) => {
-        const atual = this.mapaInteracoes.get(noticia.id!) ?? { curtido: false, salvo: false };
-        this.mapaInteracoes.set(noticia.id!, { ...atual, curtido: i.curtido });
+    this.enviarFeedback(noticia, 'curtido', 'LIKE', 'UNLIKE');
+  }
 
-        this.todasNoticias.forEach(n => { if (n.id === noticia.id) n.likedByUser = i.curtido; });
-        this.noticias.forEach(n => { if (n.id === noticia.id) n.likedByUser = i.curtido; });
+  onSalvar(noticia: Noticia): void {
+    this.enviarFeedback(noticia, 'salvo', 'SAVE', 'UNSAVE');
+  }
+
+  onVerMais(noticia: Noticia): void {
+    this.enviarFeedback(noticia, 'verMais', 'MORE', 'CLEAR_MORE');
+  }
+
+  onVerMenos(noticia: Noticia): void {
+    this.enviarFeedback(noticia, 'verMenos', 'LESS', 'CLEAR_LESS');
+  }
+
+  onAbrirNoticia(noticia: Noticia): void {
+    if (!noticia.id || !this.auth.isLoggedIn()) return;
+    this.interacaoService.registrarAbertura(noticia.id).subscribe({ error: () => {} });
+  }
+
+  private enviarFeedback(
+    noticia: Noticia,
+    campo: keyof Pick<Interacao, 'curtido' | 'salvo' | 'verMais' | 'verMenos'>,
+    quandoAtiva: FeedbackAcao,
+    quandoInativa: FeedbackAcao
+  ): void {
+    if (!noticia.id) return;
+    const estadoAtual = this.mapaInteracoes.get(noticia.id);
+    const acao = estadoAtual?.[campo] ? quandoInativa : quandoAtiva;
+
+    this.interacaoService.registrarFeedback(noticia.id, acao).subscribe({
+      next: (interacao) => {
+        const estado = this.estadoDaInteracao(interacao);
+        this.mapaInteracoes.set(noticia.id!, estado);
+        this.todasNoticias.forEach(n => this.aplicarEstadoNaNoticia(n, noticia.id!, estado));
+        this.noticias.forEach(n => this.aplicarEstadoNaNoticia(n, noticia.id!, estado));
 
         if (this.filtroAtivo === 'curtidos') {
           this.noticias = this.todasNoticias.filter(n => n.likedByUser);
+        } else if (this.filtroAtivo === 'ler-mais-tarde') {
+          this.noticias = this.todasNoticias.filter(n => n.savedByUser);
+        } else if (this.filtroAtivo === 'para-voce') {
+          this.carregarParaVoce();
         }
+      },
+      error: () => {
+        this.erro = 'Não foi possível registrar seu feedback. Tente novamente.';
       }
     });
   }
 
-  onSalvar(noticia: Noticia): void {
-    if (!noticia.id) return;
-    this.interacaoService.salvar(noticia.id).subscribe({
-      next: (i) => {
-        const atual = this.mapaInteracoes.get(noticia.id!) ?? { curtido: false, salvo: false };
-        this.mapaInteracoes.set(noticia.id!, { ...atual, salvo: i.salvo });
-
-        this.todasNoticias.forEach(n => { if (n.id === noticia.id) n.savedByUser = i.salvo; });
-        this.noticias.forEach(n => { if (n.id === noticia.id) n.savedByUser = i.salvo; });
-
-        if (this.filtroAtivo === 'ler-mais-tarde') {
-          this.noticias = this.todasNoticias.filter(n => n.savedByUser);
-        }
-      }
-    });
+  private aplicarEstadoNaNoticia(
+    noticia: Noticia,
+    newsId: number,
+    estado: Pick<Interacao, 'curtido' | 'salvo' | 'verMais' | 'verMenos'>
+  ): void {
+    if (noticia.id !== newsId) return;
+    noticia.likedByUser = estado.curtido;
+    noticia.savedByUser = estado.salvo;
+    noticia.moreByUser = estado.verMais;
+    noticia.lessByUser = estado.verMenos;
   }
 
   definirTema(tema: Tema): void {

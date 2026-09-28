@@ -20,22 +20,40 @@
         <div class="card-acoes" (click)="$event.stopPropagation()">
             <button class="btn-acao gostei"
                     [class.ativo]="noticia.likedByUser"
+                    [attr.aria-pressed]="noticia.likedByUser"
                     (click)="curtir()">
                 <span class="icone">{{ noticia.likedByUser ? '♥' : '♡' }}</span>
-                <span>Gostei</span>
+                <span>Curtir</span>
             </button>
 
             <button class="btn-acao salvar"
                     [class.ativo]="noticia.savedByUser"
+                    [attr.aria-pressed]="noticia.savedByUser"
                     (click)="salvar()">
                 <span class="icone">{{ noticia.savedByUser ? '◆' : '◇' }}</span>
-                <span>{{ noticia.savedByUser ? 'Salvo' : 'Ler mais tarde' }}</span>
+                <span>{{ noticia.savedByUser ? 'Salvo' : 'Salvar' }}</span>
+            </button>
+
+            <button class="btn-acao ver-mais"
+                    [class.ativo]="noticia.moreByUser"
+                    [attr.aria-pressed]="noticia.moreByUser"
+                    (click)="verMais()">
+                <span class="icone">＋</span>
+                <span>Ver mais</span>
+            </button>
+
+            <button class="btn-acao ver-menos"
+                    [class.ativo]="noticia.lessByUser"
+                    [attr.aria-pressed]="noticia.lessByUser"
+                    (click)="verMenos()">
+                <span class="icone">−</span>
+                <span>Ver menos</span>
             </button>
 
             <a class="btn-link" [href]="noticia.url" target="_blank" rel="noopener"
                *ngIf="noticia.url && noticia.url !== '#'"
-               (click)="$event.stopPropagation()">
-                Ver matéria →
+               (click)="registrarCliqueNoLink($event)">
+                Ler notícia →
             </a>
         </div>
     </div>

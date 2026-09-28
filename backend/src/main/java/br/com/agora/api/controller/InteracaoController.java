@@ -2,13 +2,18 @@ package br.com.agora.api.controller;
 
 import br.com.agora.api.config.JwtService;
 import br.com.agora.api.config.TokenInvalidoException;
+import br.com.agora.api.controller.dto.FeedbackRequestDTO;
+import br.com.agora.api.controller.dto.RecomendacaoDTO;
 import br.com.agora.api.domain.model.Interacao;
+import br.com.agora.api.domain.model.TipoFeedback;
 import br.com.agora.api.domain.repository.UserRepository;
 import br.com.agora.api.domain.service.InteracaoService;
+import br.com.agora.api.domain.service.RecomendacaoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -19,6 +24,9 @@ public class InteracaoController {
 
     @Autowired
     private InteracaoService interacaoService;
+
+    @Autowired
+    private RecomendacaoService recomendacaoService;
 
     @Autowired
     private JwtService jwtService;
@@ -63,10 +71,34 @@ public class InteracaoController {
         return ResponseEntity.ok(interacaoService.salvar(usuarioId, newsId));
     }
 
+    @PostMapping("/{newsId}/feedback")
+    public ResponseEntity<Interacao> feedback(
+            @PathVariable Long newsId,
+            @Valid @RequestBody FeedbackRequestDTO request,
+            @RequestHeader("Authorization") String authHeader) {
+        Long usuarioId = extrairUsuarioId(authHeader);
+        return ResponseEntity.ok(interacaoService.registrarFeedback(usuarioId, newsId, request.tipo()));
+    }
+
+    @PostMapping("/{newsId}/abertura")
+    public ResponseEntity<Interacao> registrarAbertura(
+            @PathVariable Long newsId,
+            @RequestHeader("Authorization") String authHeader) {
+        Long usuarioId = extrairUsuarioId(authHeader);
+        return ResponseEntity.ok(interacaoService.registrarFeedback(usuarioId, newsId, TipoFeedback.OPEN_ARTICLE));
+    }
+
     @GetMapping("/minhas")
     public ResponseEntity<List<Interacao>> minhas(
             @RequestHeader("Authorization") String authHeader) {
         Long usuarioId = extrairUsuarioId(authHeader);
         return ResponseEntity.ok(interacaoService.listarTodas(usuarioId));
+    }
+
+    @GetMapping("/para-voce")
+    public ResponseEntity<RecomendacaoDTO> paraVoce(
+            @RequestHeader("Authorization") String authHeader) {
+        Long usuarioId = extrairUsuarioId(authHeader);
+        return ResponseEntity.ok(recomendacaoService.paraUsuario(usuarioId));
     }
 }

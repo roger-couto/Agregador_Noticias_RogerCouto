@@ -12,10 +12,11 @@ public class NoticiaDTO {
     private LocalDateTime publicadoEm;
     private int gostei;
     private int lerDepois;
+    private Long clusterId;
 
     public NoticiaDTO(Long id, String titulo, String descricao, String url,
                       String imageUrl, String portal,
-                      LocalDateTime publicadoEm, int gostei, int lerDepois) {
+                      LocalDateTime publicadoEm, int gostei, int lerDepois, Long clusterId) {
         this.id = id;
         this.titulo = titulo;
         this.descricao = descricao;
@@ -25,6 +26,7 @@ public class NoticiaDTO {
         this.publicadoEm = publicadoEm;
         this.gostei = gostei;
         this.lerDepois = lerDepois;
+        this.clusterId = clusterId;
     }
 
     public Long getId() { return id; }
@@ -45,4 +47,6 @@ public class NoticiaDTO {
     public void setGostei(int gostei) { this.gostei = gostei; }
     public int getLerDepois() { return lerDepois; }
     public void setLerDepois(int lerDepois) { this.lerDepois = lerDepois; }
+    public Long getClusterId() { return clusterId; }
+    public void setClusterId(Long clusterId) { this.clusterId = clusterId; }
 }

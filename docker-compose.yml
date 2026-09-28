@@ -14,6 +14,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # Serviço local do Sentence-BERT; o primeiro uso baixa o modelo uma vez.
+  embeddings:
+    build: ./embedding-service
+    container_name: agora_embeddings
+    environment:
+      - EMBEDDING_MODEL=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+      - EMBEDDING_MODEL_REVISION=e62509716f15c5fd03a6fd3156a4bc5e43f83f26
+      - HF_HOME=/model-cache
+    volumes:
+      - embedding_model_cache:/model-cache
+    restart: unless-stopped
+
   # Back-end Spring Boot (Java 21)
   backend:
     build: ./backend
@@ -22,11 +34,13 @@ services:
       - "8080:8080"
     depends_on:
       - db
+      - embeddings
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/agora
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=sua_senha_aqui
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - EMBEDDING_SERVICE_URL=http://embeddings:8001
 
   # Front-end Angular
   frontend:
@@ -39,3 +53,4 @@ services:
 
 volumes:
   postgres_data:
+  embedding_model_cache:

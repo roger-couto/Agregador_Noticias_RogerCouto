@@ -25,12 +25,17 @@ public class NewsService {
     private String baseUrl;
 
     private final NewsRepository newsRepository;
+    private final EmbeddingClient embeddingClient;
+    private final ClusterizacaoService clusterizacaoService;
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
-    public NewsService(NewsRepository newsRepository) {
+    public NewsService(NewsRepository newsRepository, EmbeddingClient embeddingClient,
+                       ClusterizacaoService clusterizacaoService) {
         this.newsRepository = newsRepository;
+        this.embeddingClient = embeddingClient;
+        this.clusterizacaoService = clusterizacaoService;
     }
 
     private static List<NoticiaDTO> cacheRecentes = null; // Cache em memória para feed
@@ -100,7 +105,7 @@ public class NewsService {
     }
 
     private List<NoticiaDTO> fetchEConverter(String url, String portal) {
-        List<NoticiaDTO> resultado = new ArrayList<>();
+        List<News> resultado = new ArrayList<>();
         try {
             String json = restTemplate.getForObject(url, String.class);
             JsonNode root = mapper.readTree(json);
@@ -148,7 +153,7 @@ public class NewsService {
                     return newsRepository.save(nova);
                 });
 
-                resultado.add(toDTO(news));
+                resultado.add(news);
             }
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             System.err.println("[NewsService] NewsAPI retornou erro HTTP " + e.getStatusCode()
@@ -159,14 +164,46 @@ public class NewsService {
             System.err.println("[NewsService] Erro inesperado ao buscar noticias: " + e.getMessage());
             e.printStackTrace();
         }
-        return resultado;
+        prepararPersonalizacao();
+        return resultado.stream().map(news -> newsRepository.findById(news.getId()).orElse(news))
+                .map(this::toDTO).toList();
+    }
+
+    /** Processa somente registros sem vetor; a operação não consulta a NewsAPI. */
+    public void prepararPersonalizacao() {
+        try {
+            List<News> pendentes = newsRepository.findAllByEmbeddingIsNullAndTituloIsNotNullOrderByIdAsc()
+                    .stream().filter(n -> n.getTitulo() != null && !n.getTitulo().isBlank())
+                    .limit(128).toList();
+            if (!pendentes.isEmpty()) {
+                List<String> textos = pendentes.stream().map(n -> {
+                    String resumo = n.getDescricao() == null ? "" : n.getDescricao().trim();
+                    return n.getTitulo().trim() + (resumo.isBlank() ? "" : "\n" + resumo);
+                }).toList();
+                var resposta = embeddingClient.gerarEmbeddings(textos);
+                if (resposta == null || resposta.embeddings() == null || resposta.embeddings().size() != pendentes.size()) {
+                    throw new IllegalStateException("Resposta do serviço de embeddings não corresponde ao lote enviado");
+                }
+                for (int i = 0; i < pendentes.size(); i++) {
+                    News news = pendentes.get(i);
+                    news.setEmbedding(resposta.embeddings().get(i));
+                    news.setEmbeddingModel(resposta.model());
+                    news.setEmbeddingRevision(resposta.revision());
+                }
+                newsRepository.saveAll(pendentes);
+            }
+            clusterizacaoService.atualizarClusters();
+        } catch (Exception e) {
+            // A indisponibilidade do modelo não deve impedir a entrega das notícias.
+            System.err.println("[Personalizacao] Embeddings/clusters adiados: " + e.getMessage());
+        }
     }
 
     public NoticiaDTO toDTO(News news) {
         return new NoticiaDTO(
                 news.getId(), news.getTitulo(), news.getDescricao(),
                 news.getUrl(), news.getImageUrl(), news.getPortal(),
-                news.getPublicadoEm(), news.getGostei(), news.getLerDepois()
+                news.getPublicadoEm(), news.getGostei(), news.getLerDepois(), news.getClusterId()
         );
     }
 

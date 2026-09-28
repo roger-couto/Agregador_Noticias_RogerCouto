@@ -29,6 +29,7 @@ As variáveis de ambiente para conexão do Spring Boot com o banco PostgreSQL j�
 | Banco      | PostgreSQL             |
 | Frontend   | Angular 17 + SCSS      |
 | News API   | NewsAPI.org            |
+| Personalização | Sentence-BERT multilíngue + K-means |
 
 ---
 
@@ -76,7 +77,24 @@ GET    /api/news/tag/{tag}       → filtrar por tópico
 GET    /api/news/portal/{portal} → filtrar por portal
 PATCH  /api/news/{id}/gostei     → curtir notícia
 PATCH  /api/news/{id}/ler-depois → salvar para depois
+
+POST   /api/interacoes/{newsId}/feedback → registrar LIKE, UNLIKE, SAVE, UNSAVE, MORE, LESS, CLEAR_MORE ou CLEAR_LESS
+POST   /api/interacoes/{newsId}/abertura → registrar abertura da matéria (sinal implícito fraco)
+GET    /api/interacoes/minhas            → consultar estados de feedback do usuário autenticado
+GET    /api/interacoes/para-voce         → notícias ordenadas pelo beta dinâmico do usuário
 ```
+
+As ações autenticadas devem enviar `Authorization: Bearer <token>`. Os estados atuais ficam em `tb_interacoes` e cada ação é acrescentada a `tb_feedback_eventos`; o Hibernate cria/atualiza essas estruturas ao iniciar o backend com a configuração atual de `ddl-auto=update`.
+
+### Personalização de notícias (etapa experimental do TCC)
+
+- O serviço `embedding-service` usa `paraphrase-multilingual-MiniLM-L12-v2` para representar **título + resumo** em vetores semânticos. O conteúdo completo da matéria não é obtido.
+- O serviço é local ao Docker Compose e não faz chamadas à NewsAPI. Os vetores são gerados apenas para notícias que ainda não têm embedding e ficam em `tb_news` (JSONB), junto do nome/revisão do modelo.
+- O primeiro uso baixa os arquivos do modelo do Hugging Face. O volume `embedding_model_cache` preserva esse download entre reinicializações. Esse download e a geração local podem exigir memória e CPU, mas não consomem a cota de requisições da NewsAPI.
+- Com pelo menos duas notícias representadas, o backend ajusta K-means determinístico, com no máximo cinco grupos. Os centroides ficam em `tb_cluster_centroides`; notícias futuras são atribuídas ao centroide mais próximo, mantendo os grupos estáveis durante a coleta.
+- Cada notícia recebe um `clusterId`, e o evento de feedback registra o grupo conhecido no momento do clique. Com poucos dados, os grupos podem ser frágeis ou pouco interpretáveis; essa limitação faz parte da avaliação acadêmica.
+- A seção **Para você** calcula as preferências por cluster com decaimento temporal. `beta` controla o peso dessas preferências na ordenação: começa em 0,15, cresce com os sinais válidos até o limite de 0,85 e é recalculado a cada consulta. Curtir e “ver menos” têm peso maior; abrir notícia tem peso baixo. O endpoint devolve o valor de beta e a quantidade de sinais considerados ou ainda pendentes. Ao abrir a seção, o backend também tenta processar embeddings que ficaram pendentes, sem buscar novos artigos na NewsAPI; eventos antigos sem cluster usam o cluster atual da notícia quando disponível.
+- No `docker-compose up --build`, o serviço de embeddings sobe junto do backend e frontend. Se estiver rodando o backend fora do Compose, configure `embedding.service.url` (padrão `http://localhost:8001`) e inicie o serviço Python em `embedding-service`.
 
 ---
 

@@ -32,6 +32,15 @@ public class Interacao {
     @Column(nullable = false)
     private boolean salvo = false;
 
+    @Column(name = "ver_mais", nullable = false, columnDefinition = "boolean not null default false")
+    private boolean verMais = false;
+
+    @Column(name = "ver_menos", nullable = false, columnDefinition = "boolean not null default false")
+    private boolean verMenos = false;
+
     @Column(name = "criado_em")
     private LocalDateTime criadoEm = LocalDateTime.now();
+
+    @Column(name = "atualizado_em")
+    private LocalDateTime atualizadoEm = LocalDateTime.now();
 }

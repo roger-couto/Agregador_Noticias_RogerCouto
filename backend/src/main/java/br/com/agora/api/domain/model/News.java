@@ -4,8 +4,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "tb_news") //diz para o hibernate que representa a tabela tb_news
@@ -37,4 +40,20 @@ public class News {
     private int gostei = 0; //contadores globais (ainda n implementado)
 
     private int lerDepois = 0;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<Double> embedding;
+
+    @Column(name = "embedding_model", length = 160)
+    private String embeddingModel;
+
+    @Column(name = "embedding_revision", length = 80)
+    private String embeddingRevision;
+
+    @Column(name = "cluster_id")
+    private Long clusterId;
+
+    @Column(name = "cluster_version")
+    private Integer clusterVersion;
 }
