@@ -38,22 +38,21 @@
         </header>
 
         <section class="feed-area">
-            <div class="recomendacao-info" *ngIf="filtroAtivo === 'para-voce'">
-                <strong>Seu beta dinâmico: {{ betaAtual | percent:'1.0-1' }}</strong>
-                <span>Influência da personalização na ordem das notícias · {{ sinaisConsiderados }} sinais considerados</span>
-                <span *ngIf="sinaisPendentes > 0" class="sinais-pendentes">
-                    {{ sinaisPendentes }} interações aguardam o processamento do tema das notícias.
-                </span>
-            </div>
             <div *ngIf="erro" class="aviso-erro">⚠️ {{ erro }}</div>
             <div *ngIf="carregando" class="carregando">
                 <div class="loader-ring"></div>
                 <span>Buscando notícias...</span>
             </div>
             <div *ngIf="!carregando && noticiasFiltradas.length === 0 && !erro" class="vazio">
-                {{ filtroAtivo === 'para-voce' ? 'Ainda não há notícias processadas para recomendar. Volte em instantes.' : 'Nenhuma notícia encontrada.' }}
+                <span class="vazio-icone" aria-hidden="true">📰</span>
+                <h2>{{ filtroAtivo === 'para-voce' ? 'Ainda não há notícias para você' : 'Nenhuma notícia encontrada' }}</h2>
+                <p>{{ filtroAtivo === 'para-voce' ? 'Enquanto isso, confira as notícias mais recentes.' : 'Tente pesquisar por outro assunto.' }}</p>
+                <button *ngIf="filtroAtivo === 'para-voce'" class="vazio-acao" (click)="carregarRecentes()">
+                    Ver notícias recentes
+                </button>
             </div>
             <div class="cards-lista" *ngIf="!carregando">
+                <!-- O Feed conecta cada botão do cartão ao fluxo de feedback do usuário. -->
                 <app-news-card
                         *ngFor="let noticia of noticiasFiltradas; let i = index"
                         [noticia]="noticia"

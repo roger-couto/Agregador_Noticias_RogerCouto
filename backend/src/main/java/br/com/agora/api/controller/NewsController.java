@@ -30,6 +30,7 @@ public class NewsController {
     // GET /api/news/recentes - noticias mais recentes (headline Brasil)
     @GetMapping("/recentes")
     public ResponseEntity<List<NoticiaDTO>> recentes() {
+        // Primeiro tento atualizar o catálogo; depois respondo com o que está no banco.
         newsApiColetaService.coletarTemasSeNecessarios();
         return ResponseEntity.ok(newsService.buscarRecentes());
     }

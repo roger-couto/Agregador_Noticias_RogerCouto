@@ -17,6 +17,7 @@ import java.util.List;
 
 @Service
 public class InteracaoService {
+    private static final long JANELA_ABERTURA_HORAS = 24;
 
     private final InteracaoRepository interacaoRepository;
     private final FeedbackEventoRepository feedbackEventoRepository;
@@ -32,9 +33,11 @@ public class InteracaoService {
 
     @Transactional
     public Interacao registrarFeedback(Long usuarioId, Long newsId, TipoFeedback tipo) {
+        // Confirma a existência da notícia antes de salvar qualquer interação/evento.
         News news = newsRepository.findById(newsId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notícia não encontrada."));
 
+        // Interacao guarda o estado atual dos botões para esta pessoa e notícia.
         Interacao interacao = interacaoRepository.findByUsuarioIdAndNewsId(usuarioId, newsId)
                 .orElseGet(() -> {
                     Interacao nova = new Interacao();
@@ -45,6 +48,7 @@ public class InteracaoService {
 
         boolean curtidoAntes = interacao.isCurtido();
         boolean salvoAntes = interacao.isSalvo();
+        // O estado pode ser atualizado; o evento abaixo preserva cada ação no histórico.
         boolean mudouEstado = aplicarEstado(interacao, tipo);
 
         if (mudouEstado) {
@@ -53,11 +57,18 @@ public class InteracaoService {
         }
 
         Interacao interacaoSalva = interacaoRepository.save(interacao);
-        feedbackEventoRepository.save(new FeedbackEvento(usuarioId, newsId, news.getClusterId(), tipo));
+        // Não sobrescreve o histórico: cada clique vira um registro para a recomendação.
+        boolean aberturaJaRegistrada = tipo == TipoFeedback.OPEN_ARTICLE
+                && feedbackEventoRepository.existsByUsuarioIdAndNewsIdAndTipoAndCriadoEmAfter(
+                        usuarioId, newsId, tipo, LocalDateTime.now().minusHours(JANELA_ABERTURA_HORAS));
+        if (!aberturaJaRegistrada) {
+            feedbackEventoRepository.save(new FeedbackEvento(usuarioId, newsId, news.getClusterId(), tipo));
+        }
         return interacaoSalva;
     }
 
     private boolean aplicarEstado(Interacao interacao, TipoFeedback tipo) {
+        // Os casos de desfazer alteram o estado atual sem apagar os eventos anteriores.
         return switch (tipo) {
             case LIKE -> definir(interacao.isCurtido(), true, interacao::setCurtido);
             case UNLIKE -> definir(interacao.isCurtido(), false, interacao::setCurtido);

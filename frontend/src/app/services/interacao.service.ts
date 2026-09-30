@@ -20,9 +20,6 @@ export type FeedbackAcao = 'LIKE' | 'UNLIKE' | 'SAVE' | 'UNSAVE' | 'MORE' | 'LES
 
 export interface Recomendacao {
     noticias: Noticia[];
-    beta: number;
-    sinaisConsiderados: number;
-    sinaisPendentes: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -32,6 +29,7 @@ export class InteracaoService {
     constructor(private http: HttpClient, private auth: AuthService) {}
 
     private headers(): HttpHeaders {
+        // Requisições de usuário autenticado levam o JWT no cabeçalho Authorization.
         return new HttpHeaders({ Authorization: `Bearer ${this.auth.getToken()}` });
     }
 
@@ -44,6 +42,7 @@ export class InteracaoService {
     }
 
     registrarFeedback(newsId: number, tipo: FeedbackAcao): Observable<Interacao> {
+        // Envia o tipo de ação escolhido; o backend associa-o ao usuário do token.
         return this.http.post<Interacao>(`${this.API}/${newsId}/feedback`, { tipo }, { headers: this.headers() });
     }
 
@@ -56,6 +55,7 @@ export class InteracaoService {
     }
 
     paraVoce(): Observable<Recomendacao> {
+        // Pede a lista personalizada; o frontend apenas exibe a ordenação recebida.
         return this.http.get<Recomendacao>(`${this.API}/para-voce`, { headers: this.headers() });
     }
 }

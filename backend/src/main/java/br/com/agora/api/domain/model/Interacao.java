@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Interacao {
 
+    // Eu guardo o estado atual dos botões aqui; o histórico completo fica em FeedbackEvento.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

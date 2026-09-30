@@ -1,5 +1,6 @@
 <article class="news-card" (click)="abrirLink()">
 
+    <!-- Dados textuais/imagem recebidos do backend para esta notícia. -->
     <div class="card-imagem" *ngIf="noticia.imageUrl && noticia.imageUrl !== 'null'">
         <img [src]="noticia.imageUrl" [alt]="noticia.titulo" loading="lazy"
              (error)="onImgError($event)">
@@ -17,6 +18,7 @@
             {{ noticia.descricao | slice:0:200 }}{{ (noticia.descricao && noticia.descricao.length > 200) ? '...' : '' }}
         </p>
 
+        <!-- Os botões emitem ações ao Feed; stopPropagation evita abrir a notícia junto. -->
         <div class="card-acoes" (click)="$event.stopPropagation()">
             <button class="btn-acao gostei"
                     [class.ativo]="noticia.likedByUser"

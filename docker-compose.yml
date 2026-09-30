@@ -12,9 +12,10 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      # Mantém notícias, feedbacks e centroides mesmo quando os containers são recriados.
       - postgres_data:/var/lib/postgresql/data
 
-  # Serviço local do Sentence-BERT; o primeiro uso baixa o modelo uma vez.
+  # Serviço local de embeddings; não é uma API comercial nem faz chamadas à NewsAPI.
   embeddings:
     build: ./embedding-service
     container_name: agora_embeddings
@@ -23,6 +24,7 @@ services:
       - EMBEDDING_MODEL_REVISION=e62509716f15c5fd03a6fd3156a4bc5e43f83f26
       - HF_HOME=/model-cache
     volumes:
+      # Cache persistente: o download do modelo não se repete a cada reinício.
       - embedding_model_cache:/model-cache
     restart: unless-stopped
 
@@ -41,6 +43,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=sua_senha_aqui
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - EMBEDDING_SERVICE_URL=http://embeddings:8001
+      # Segredos chegam do .env local; não ficam escritos no código Java.
       - NEWSAPI_KEY=${NEWSAPI_KEY:?Configure NEWSAPI_KEY no arquivo .env}
       - JWT_SECRET=${JWT_SECRET:?Configure JWT_SECRET no arquivo .env}
 

@@ -1,3 +1,6 @@
+# Framework HTTP que define os endpoints e valida os dados recebidos.
 fastapi>=0.115,<1
+# Servidor ASGI que executa a aplicação FastAPI.
 uvicorn[standard]>=0.30,<1
+# Biblioteca que baixa/carrega o modelo e converte frases em embeddings.
 sentence-transformers>=3.0,<6

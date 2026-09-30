@@ -15,11 +15,13 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 public class NewsApiColetaEstado {
+    // Chaves como "tema:politica" e "orcamento:2026-09-30" separam consulta e cota diária.
     @Id
     @Column(name = "chave_consulta", length = 100)
     private String chaveConsulta;
 
     @Column(name = "ultima_tentativa", nullable = false)
+    // Gravada antes da chamada para impedir repetição imediata após reinício/falha.
     private LocalDateTime ultimaTentativa;
 
     @Column(name = "ultima_coleta")
@@ -29,6 +31,7 @@ public class NewsApiColetaEstado {
     private Integer artigosRecebidos;
 
     @Column(name = "requisicoes_no_dia")
+    // Contador persistente que aplica o teto local de chamadas por dia UTC.
     private Integer requisicoesNoDia;
 
     @Column(name = "ultimo_erro", length = 500)

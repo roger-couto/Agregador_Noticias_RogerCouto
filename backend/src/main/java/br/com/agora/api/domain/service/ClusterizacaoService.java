@@ -15,8 +15,11 @@ import java.util.List;
 /** K-means inicial e atribuição estável às médias persistidas. */
 @Service
 public class ClusterizacaoService {
+    // Eu uso uma versão para distinguir centroides gerados por regras diferentes.
     private static final int VERSAO = 1;
+    // Começo com no máximo 5 grupos; é um limite prático, ainda não validado.
     private static final int MAX_CLUSTERS = 5;
+    // 50 é um teto de execução; paro antes se os centros não mudarem.
     private static final int MAX_ITERACOES = 50;
 
     private final NewsRepository newsRepository;
@@ -60,6 +63,7 @@ public class ClusterizacaoService {
                 .filter(n -> n.getEmbedding() != null)
                 .map(News::getEmbedding)
                 .toList();
+        // Uso raiz(N) como chute inicial para K; não afirmo que seja o valor ideal.
         int k = Math.min(MAX_CLUSTERS, Math.max(2, (int) Math.ceil(Math.sqrt(pontos.size()))));
         k = Math.min(k, pontos.size());
         List<List<Double>> centros = inicializarDeterministico(pontos, k);
@@ -104,6 +108,7 @@ public class ClusterizacaoService {
 
     private List<List<Double>> inicializarDeterministico(List<List<Double>> pontos, int k) {
         List<List<Double>> centros = new ArrayList<>();
+        // Escolho os próximos centros afastados dos anteriores para começar com grupos distintos.
         centros.add(pontos.get(0));
         while (centros.size() < k) {
             List<Double> proximo = pontos.stream()

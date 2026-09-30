@@ -41,6 +41,7 @@ public class News {
 
     private int lerDepois = 0;
 
+    // Eu salvo aqui o vetor calculado a partir do título + resumo.
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private List<Double> embedding;
@@ -52,6 +53,7 @@ public class News {
     private String embeddingRevision;
 
     @Column(name = "cluster_id")
+    // ID do centro mais próximo; não é um rótulo escrito como "política".
     private Long clusterId;
 
     @Column(name = "cluster_version")

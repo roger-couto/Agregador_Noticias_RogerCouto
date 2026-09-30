@@ -250,7 +250,35 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.vazio { text-align: center; padding: 4rem; color: rgba(255,255,255,0.3); }
+.vazio {
+  max-width: 560px;
+  margin: 2rem auto;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: rgba(255,255,255,0.72);
+  background: rgba(0,0,0,0.12);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+
+  .vazio-icone { font-size: 2rem; }
+  h2 { margin: 0.75rem 0 0.35rem; color: var(--text-primary); font-size: 1.1rem; }
+  p { margin: 0 0 1.25rem; color: rgba(255,255,255,0.6); font-size: 0.9rem; }
+}
+
+.vazio-acao {
+  padding: 0.65rem 1rem;
+  color: #261b00;
+  background: var(--gold);
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, filter 0.2s;
+
+  &:hover { transform: translateY(-1px); filter: brightness(1.08); }
+}
 
 .cards-lista {
   display: flex;
@@ -259,20 +287,6 @@
   max-width: 720px;
   margin: 0 auto;
   width: 100%;
-}
-
-.recomendacao-info {
-  max-width: 720px;
-  width: 100%;
-  margin: 0 auto 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  color: rgba(255,255,255,0.68);
-  font-size: 0.78rem;
-
-  strong { color: var(--gold); font-size: 0.9rem; }
-  .sinais-pendentes { color: #ffd18a; }
 }
 
 /* ======= SIDEBAR DIREITA ======= */

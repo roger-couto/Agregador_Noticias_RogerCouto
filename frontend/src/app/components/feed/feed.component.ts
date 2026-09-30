@@ -20,9 +20,6 @@ export class FeedComponent implements OnInit {
   noticias: Noticia[] = [];
   todasNoticias: Noticia[] = [];
   carregando = false;
-  betaAtual = 0.15;
-  sinaisConsiderados = 0;
-  sinaisPendentes = 0;
   erro = '';
   filtroAtivo = 'recentes';
   termoBusca = '';
@@ -32,6 +29,7 @@ export class FeedComponent implements OnInit {
   temas = TEMAS;
   usuario: { nome: string; email: string; id: number } | null = null;
 
+  // Cache local do estado atual dos botões, indexado pelo ID da notícia.
   private mapaInteracoes = new Map<number, Pick<Interacao, 'curtido' | 'salvo' | 'verMais' | 'verMenos'>>();
 
   private garantizarMapaEFiltrar(callback: () => void): void {
@@ -86,6 +84,7 @@ export class FeedComponent implements OnInit {
       this.carregarRecentes();
       return;
     }
+    // Carrega o estado do usuário antes das notícias para os botões aparecerem marcados corretamente.
     this.interacaoService.minhas().subscribe({
       next: (interacoes) => {
         this.mapaInteracoes.clear();
@@ -148,11 +147,9 @@ export class FeedComponent implements OnInit {
     this.filtroAtivo = 'para-voce';
     this.carregando = true;
     this.erro = '';
+    // O backend calcula a ordem com o histórico deste usuário e devolve o feed pronto.
     this.interacaoService.paraVoce().subscribe({
       next: (resposta) => {
-        this.betaAtual = resposta.beta;
-        this.sinaisConsiderados = resposta.sinaisConsiderados;
-        this.sinaisPendentes = resposta.sinaisPendentes;
         this.todasNoticias = this.aplicarInteracoesNaLista(resposta.noticias);
         this.noticias = this.todasNoticias;
         this.carregando = false;
@@ -267,10 +264,12 @@ export class FeedComponent implements OnInit {
   ): void {
     if (!noticia.id) return;
     const estadoAtual = this.mapaInteracoes.get(noticia.id);
+    // Botões de estado alternam entre ativar e desfazer a ação.
     const acao = estadoAtual?.[campo] ? quandoInativa : quandoAtiva;
 
     this.interacaoService.registrarFeedback(noticia.id, acao).subscribe({
       next: (interacao) => {
+        // Atualiza o cartão no lugar; evita recarregar/reordenar o feed e perder a posição de leitura.
         const estado = this.estadoDaInteracao(interacao);
         this.mapaInteracoes.set(noticia.id!, estado);
         this.todasNoticias.forEach(n => this.aplicarEstadoNaNoticia(n, noticia.id!, estado));

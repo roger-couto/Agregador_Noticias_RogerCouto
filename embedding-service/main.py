@@ -5,6 +5,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from sentence_transformers import SentenceTransformer
 
+# MiniLM multilíngue da família Sentence-Transformers (não é o BERT original).
+# Fixei a revisão para repetir os mesmos resultados durante o experimento.
 MODEL_NAME = os.getenv(
     "EMBEDDING_MODEL",
     "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
@@ -15,6 +17,7 @@ MODEL_REVISION = os.getenv(
 )
 
 app = FastAPI(title="Ágora Embeddings", version="1.0.0")
+# Uso um modelo multilíngue já treinado; os feedbacks não alteram os pesos dele.
 
 
 class EmbeddingRequest(BaseModel):
@@ -29,12 +32,12 @@ class EmbeddingResponse(BaseModel):
 
 @lru_cache(maxsize=1)
 def load_model() -> SentenceTransformer:
+    # Carrego uma vez e uso CPU para não exigir placa de vídeo.
     return SentenceTransformer(MODEL_NAME, revision=MODEL_REVISION, device="cpu")
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    # Não carrega o modelo no healthcheck; o download pode demorar no primeiro uso.
     return {"status": "ok", "model": MODEL_NAME}
 
 

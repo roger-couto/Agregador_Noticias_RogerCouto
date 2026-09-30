@@ -24,6 +24,9 @@ import java.text.Normalizer;
 @Service
 public class NewsService {
 
+    // Eu processo no máximo 128 por vez para não mandar o catálogo inteiro ao modelo.
+    private static final int MAX_ARTIGOS_EMBEDDING = 128;
+
     @Value("${newsapi.key}") // Lê a chave da newsapi
     private String apiKey;
 
@@ -68,6 +71,7 @@ public class NewsService {
         }
         List<News> resultado = new ArrayList<>();
         HttpHeaders headers = new HttpHeaders();
+        // Envio a chave no cabeçalho para ela não aparecer na URL da chamada.
         headers.set("X-Api-Key", apiKey);
         ResponseEntity<String> response = restTemplate.exchange(
                 url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
@@ -91,6 +95,7 @@ public class NewsService {
             final String descricaoFinal = descricao;
             final String imageUrlFinal = imageUrl;
 
+            // Uso a URL como identificador de duplicata nas próximas coletas.
             News news = newsRepository.findByUrl(urlNoticia).map(existente -> {
                 boolean tituloInvalidoSalvo = existente.getTitulo() == null
                         || existente.getTitulo().isBlank()
@@ -128,12 +133,14 @@ public class NewsService {
     /** Processa somente registros sem vetor; a operação não consulta a NewsAPI. */
     public void prepararPersonalizacao() {
         try {
+            // Só gero vetores para matérias ainda não processadas; isso não chama a NewsAPI.
             List<News> pendentes = newsRepository.findAllByEmbeddingIsNullAndTituloIsNotNullOrderByIdAsc()
                     .stream().filter(n -> n.getTitulo() != null && !n.getTitulo().isBlank())
-                    .limit(128).toList();
+                    .limit(MAX_ARTIGOS_EMBEDDING).toList();
             if (!pendentes.isEmpty()) {
                 List<String> textos = pendentes.stream().map(n -> {
                     String resumo = n.getDescricao() == null ? "" : n.getDescricao().trim();
+                    // Como não tenho o corpo completo, represento somente título + resumo.
                     return n.getTitulo().trim() + (resumo.isBlank() ? "" : "\n" + resumo);
                 }).toList();
                 var resposta = embeddingClient.gerarEmbeddings(textos);
@@ -150,7 +157,7 @@ public class NewsService {
             }
             clusterizacaoService.atualizarClusters();
         } catch (Exception e) {
-            // A indisponibilidade do modelo não deve impedir a entrega das notícias.
+            // Se o modelo falhar, eu adio vetores e clusters, mas continuo entregando as notícias.
             System.err.println("[Personalizacao] Embeddings/clusters adiados: " + e.getMessage());
         }
     }

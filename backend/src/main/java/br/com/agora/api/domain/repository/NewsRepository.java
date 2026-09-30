@@ -15,6 +15,8 @@ public interface NewsRepository extends JpaRepository<News, Long> {
     List<News> findByPortalIgnoreCaseOrderByPublicadoEmDesc(String portal);
     List<News> findAllByOrderByPublicadoEmDesc();
     List<News> findTop60ByOrderByPublicadoEmDesc();
+    // O recomendador avalia um conjunto maior e devolve somente as 60 melhores posições.
+    List<News> findTop1000ByOrderByPublicadoEmDesc();
     List<News> findTop60ByPortalIgnoreCaseOrderByPublicadoEmDesc(String portal);
     List<News> findAllByEmbeddingIsNotNullOrderByIdAsc();
     List<News> findTop1000ByEmbeddingIsNotNullOrderByPublicadoEmDesc();

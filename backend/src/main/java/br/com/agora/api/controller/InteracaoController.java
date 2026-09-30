@@ -35,6 +35,7 @@ public class InteracaoController {
     private UserRepository userRepository;
 
     private Long extrairUsuarioId(String authHeader) {
+        // Eu tiro o ID do usuário do token, em vez de confiar num ID enviado pelo navegador.
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new TokenInvalidoException("Token ausente ou em formato inválido. Faça login novamente.");
         }

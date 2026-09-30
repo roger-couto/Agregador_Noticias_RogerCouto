@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class FeedbackEvento {
 
+    // Eu mantenho aqui cada ação, mesmo quando o estado atual do botão muda depois.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,6 +27,7 @@ public class FeedbackEvento {
     private Long newsId;
 
     @Column(name = "cluster_id")
+    // Registro o cluster conhecido naquele clique; pode estar vazio se ainda não calculei o grupo.
     private Long clusterId;
 
     @Enumerated(EnumType.STRING)

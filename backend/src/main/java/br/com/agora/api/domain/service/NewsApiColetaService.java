@@ -15,11 +15,13 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Locale;
 
-/** Coleta comum a todos os usuários, com controle persistente por consulta e teto diário. */
+/** Eu concentro a coleta aqui para os usuários compartilharem os mesmos artigos e a mesma cota. */
 @Service
 public class NewsApiColetaService {
     private static final Logger log = LoggerFactory.getLogger(NewsApiColetaService.class);
+    // Escolhi 60 artigos por chamada para formar um catálogo útil sem paginar muitas vezes.
     private static final int PAGE_SIZE = 60;
+    // Limite local conservador; deixo margem para testes e posso configurá-lo pelo ambiente.
     private static final int LIMITE_DIARIO_PADRAO = 20;
 
     private final NewsService newsService;
@@ -31,7 +33,7 @@ public class NewsApiColetaService {
     @Value("${newsapi.collection.interval-hours:24}")
     private int intervaloHoras;
 
-    @Value("${newsapi.collection.daily-budget:20}")
+    @Value("${newsapi.collection.daily-budget:" + LIMITE_DIARIO_PADRAO + "}")
     private int limiteDiario;
 
     public NewsApiColetaService(NewsService newsService,
@@ -40,8 +42,11 @@ public class NewsApiColetaService {
         this.estadoRepository = estadoRepository;
     }
 
-    /** Quatro consultas temáticas compartilhadas; chamadas repetidas só leem o banco. */
+    /** Quatro consultas temáticas compartilhadas; usuários reaproveitam as notícias do banco. */
     public synchronized void coletarTemasSeNecessarios() {
+        // Evito duplicar consultas concorrentes dentro do mesmo processo do backend.
+        // Estes assuntos são consultas iniciais definidas manualmente para ampliar o catálogo;
+        // eu posso ajustá-los conforme a proposta e os dados disponíveis.
         for (Consulta consulta : List.of(
                 new Consulta("tema:geral", "brasil", "pt", null, null, null),
                 new Consulta("tema:politica", "política OR governo OR eleição", "pt", null, null, null),
@@ -59,6 +64,7 @@ public class NewsApiColetaService {
         newsService.prepararPersonalizacao();
     }
 
+    // Eu agendo a tentativa para as 8h de Brasília; ela só roda com o backend ligado.
     @Scheduled(cron = "0 0 8 * * *", zone = "America/Sao_Paulo")
     public void coletaDiaria() {
         coletarTemasSeNecessarios();
@@ -85,7 +91,7 @@ public class NewsApiColetaService {
             return;
         }
 
-        // Grava antes da chamada: reiniciar o backend não provoca repetição imediata.
+        // Registro a tentativa antes da chamada para não repeti-la em loop após uma falha/reinício.
         estado.setUltimaTentativa(agora);
         estadoRepository.saveAndFlush(estado);
         orcamento.setRequisicoesNoDia(requisicoesHoje + 1);
@@ -109,6 +115,7 @@ public class NewsApiColetaService {
 
     private String montarUrl(Consulta consulta) {
         LocalDate hojeUtc = LocalDate.now(ZoneOffset.UTC);
+        // Busco até ontem porque o plano de desenvolvimento tem atraso na disponibilidade dos artigos.
         LocalDate inicioJanela = hojeUtc.minusDays(3);
         LocalDate fimJanela = hojeUtc.minusDays(1);
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl + "/everything")
