@@ -1,0 +1,87 @@
+name: Coleta diária de notícias
+
+on:
+  # 11:20 UTC corresponde a 08:20 em Brasília (UTC-3).
+  # O GitHub pode iniciar tarefas agendadas alguns minutos depois do horário.
+  schedule:
+    - cron: "20 11 * * *"
+  # Permite executar uma coleta manual pela aba Actions.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coleta-diaria-newsapi
+  cancel-in-progress: false
+
+jobs:
+  coletar:
+    # O repositório é público; executores padrão são gratuitos para repos públicos.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar Java 21 e Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Montar o back-end
+        run: mvn -B -f backend/pom.xml -DskipTests package
+
+      - name: Iniciar o back-end, coletar e encerrar
+        shell: bash
+        env:
+          SPRING_DATASOURCE_URL: ${{ secrets.NEON_JDBC_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.NEON_DB_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.NEON_DB_PASSWORD }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          NEWSAPI_COLLECTION_DAILY_BUDGET: '20'
+          EMBEDDING_SERVICE_URL: http://127.0.0.1:9
+        run: |
+          set -euo pipefail
+
+          for name in SPRING_DATASOURCE_URL SPRING_DATASOURCE_USERNAME SPRING_DATASOURCE_PASSWORD NEWSAPI_KEY JWT_SECRET; do
+            if [[ -z "${!name}" ]]; then
+              echo "Falta cadastrar um dos segredos necessários nas configurações do repositório (NEON_JDBC_URL, NEON_DB_USERNAME, NEON_DB_PASSWORD, NEWSAPI_KEY e JWT_SECRET)."
+              exit 1
+            fi
+          done
+
+          java -jar backend/target/agora-api-1.0.0.jar > /tmp/agora-backend.log 2>&1 &
+          app_pid=$!
+          cleanup() {
+            kill "$app_pid" 2>/dev/null || true
+            wait "$app_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          ready=false
+          for attempt in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:8080/api/news/banco >/dev/null; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$app_pid" 2>/dev/null; then
+              cat /tmp/agora-backend.log
+              exit 1
+            fi
+            sleep 2
+          done
+
+          if [[ "$ready" != true ]]; then
+            cat /tmp/agora-backend.log
+            echo "O back-end não ficou pronto no tempo esperado."
+            exit 1
+          fi
+
+          # Este GET chama o coletor compartilhado; a NewsAPI continua limitada pelo orçamento diário do banco.
+          curl --silent --show-error --fail http://127.0.0.1:8080/api/news/recentes >/dev/null
+          cat /tmp/agora-backend.log
