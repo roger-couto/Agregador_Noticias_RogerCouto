@@ -11,8 +11,8 @@ Esta configuração mantém o banco PostgreSQL hospedado na Neon e executa o col
 ## 1. Criar o PostgreSQL remoto
 
 1. Crie um projeto na Neon e escolha uma região próxima, se disponível.
-2. Na tela de conexão, selecione Java/JDBC e copie as informações de conexão.
-3. Separe o endereço JDBC, o nome de usuário e a senha. A URL precisa usar TLS, normalmente com `sslmode=require`.
+2. Use a conexão agrupada (`DATABASE_URL`) para o back-end do Ágora. A configuração Java converte a URI Postgres da Neon para JDBC e lê usuário/senha da própria URI.
+3. Guarde também `DATABASE_URL_UNPOOLED` para exportar/importar dados; use a conexão direta para essa migração.
 4. Não coloque esses valores em arquivos do projeto nem os envie nesta conversa.
 
 ## 2. Migrar o banco que já existe
@@ -25,13 +25,11 @@ Se preferir, posso acompanhar essa migração quando você tiver criado o projet
 
 ## 3. Guardar as chaves no GitHub
 
-No repositório, abra **Settings → Secrets and variables → Actions → New repository secret** e crie estes cinco segredos:
+No repositório, abra **Settings → Secrets and variables → Actions → New repository secret** e crie estes três segredos:
 
 | Nome do segredo | Valor |
 | --- | --- |
-| `NEON_JDBC_URL` | URL JDBC completa da Neon, com `sslmode=require` |
-| `NEON_DB_USERNAME` | Usuário do banco Neon |
-| `NEON_DB_PASSWORD` | Senha do banco Neon |
+| `NEON_DATABASE_URL` | Valor de `DATABASE_URL` que o Neon CLI colocou no `.env` |
 | `NEWSAPI_KEY` | Chave atual da NewsAPI |
 | `JWT_SECRET` | Segredo aleatório de pelo menos 32 caracteres |
 
@@ -45,7 +43,7 @@ O coletor existente mantém o limite de 20 chamadas por dia UTC e grava o estado
 
 ## 5. Usar o catálogo no computador
 
-Para o front-end local mostrar as notícias coletadas na nuvem, o back-end iniciado no IntelliJ precisa apontar para a mesma URL, usuário e senha da Neon. Configure `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD` na configuração de execução do IntelliJ. Mantenha o serviço Python de embeddings local como antes.
+Para o front-end local mostrar as notícias coletadas na nuvem, inicie o back-end pelo IntelliJ com a raiz do repositório como diretório de trabalho. O Spring carrega o `.env` e usa `DATABASE_URL` da Neon automaticamente. Também carrego `../.env` quando o back-end é iniciado a partir da pasta `backend`. Mantenha o serviço Python de embeddings local como antes.
 
 O arquivo `docker-compose.yml` da execução local continua usando seu PostgreSQL local. Para apontar o Compose à Neon, é necessária uma configuração Compose separada; não altere o Compose local de forma que ele troque de banco sem querer.
 

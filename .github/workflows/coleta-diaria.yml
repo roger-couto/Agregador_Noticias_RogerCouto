@@ -38,9 +38,7 @@ jobs:
       - name: Iniciar o back-end, coletar e encerrar
         shell: bash
         env:
-          SPRING_DATASOURCE_URL: ${{ secrets.NEON_JDBC_URL }}
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.NEON_DB_USERNAME }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.NEON_DB_PASSWORD }}
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NEWSAPI_COLLECTION_DAILY_BUDGET: '20'
@@ -48,9 +46,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          for name in SPRING_DATASOURCE_URL SPRING_DATASOURCE_USERNAME SPRING_DATASOURCE_PASSWORD NEWSAPI_KEY JWT_SECRET; do
+          for name in DATABASE_URL NEWSAPI_KEY JWT_SECRET; do
             if [[ -z "${!name}" ]]; then
-              echo "Falta cadastrar um dos segredos necessários nas configurações do repositório (NEON_JDBC_URL, NEON_DB_USERNAME, NEON_DB_PASSWORD, NEWSAPI_KEY e JWT_SECRET)."
+              echo "Falta cadastrar um dos segredos necessários nas configurações do repositório (NEON_DATABASE_URL, NEWSAPI_KEY e JWT_SECRET)."
               exit 1
             fi
           done
